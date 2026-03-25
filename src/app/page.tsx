@@ -401,16 +401,33 @@ export default function App() {
   const [grading, setGrading] = useState(false);
   const [result, setResult] = useState<GradeResult | null>(null);
   const [showHint, setShowHint] = useState(false);
-  const [xp, setXp] = useState(0);
+  const [xp, setXp] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const saved = localStorage.getItem("pr_xp");
+    return saved ? Number(saved) : 0;
+  });
   const [prevXp, setPrevXp] = useState(0);
-  const [streak, setStreak] = useState(0);
+  const [streak, setStreak] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const saved = localStorage.getItem("pr_streak");
+    return saved ? Number(saved) : 0;
+  });
   const [showXpPop, setShowXpPop] = useState<number | false>(false);
   const [levelUpData, setLevelUpData] = useState<LevelInfo | null>(null);
   const [progress, setProgress] = useState<Progress>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("pr_progress");
+      if (saved) { try { return JSON.parse(saved); } catch {} }
+    }
     const p: Progress = {};
     MODULES.forEach(m => { p[m.id] = { exercises:{}, bossDefeated:false, bossRound:0, bossAnswers:{} }; });
     return p;
   });
+  // persist progress to localStorage
+  useEffect(() => { localStorage.setItem("pr_xp", String(xp)); }, [xp]);
+  useEffect(() => { localStorage.setItem("pr_streak", String(streak)); }, [streak]);
+  useEffect(() => { localStorage.setItem("pr_progress", JSON.stringify(progress)); }, [progress]);
+
   // boss state
   const [bossRound, setBossRound] = useState(0);
   const [bossAnswers, setBossAnswers] = useState({});
