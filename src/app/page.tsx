@@ -459,6 +459,18 @@ export default function App() {
     setScreen("lesson");
   };
 
+  const handleTab = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const val = ta.value;
+      setUserAnswer(val.substring(0, start) + "    " + val.substring(end));
+      requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 4; });
+    }
+  };
+
   const currentEx = activeLesson?.exercises[exIdx];
   const meta = currentEx ? EXERCISE_META[currentEx.type] : null;
 
@@ -703,7 +715,7 @@ export default function App() {
             <div className={`flex items-center gap-2 font-bold mb-2 text-sm ${meta.color}`}>{meta.icon} {meta.label}</div>
             <pre className="text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{currentEx.prompt}</pre>
           </div>
-          <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} disabled={!!result}
+          <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} onKeyDown={handleTab} disabled={!!result}
             placeholder={currentEx.type==="output"?"Type what you think prints...":"Write your Python code here..."}
             className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm font-mono text-gray-100 resize-none focus:outline-none focus:border-blue-500 disabled:opacity-50"
             rows={currentEx.type==="output"?4:7}/>
@@ -780,7 +792,7 @@ export default function App() {
                       <div className={`flex items-center gap-2 font-bold mb-2 text-sm ${rmeta.color}`}>{rmeta.icon} {rmeta.label}</div>
                       <pre className="text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{round.prompt}</pre>
                     </div>
-                    <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} disabled={!!bossResult}
+                    <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} onKeyDown={handleTab} disabled={!!bossResult}
                       placeholder="Write your answer..." rows={7}
                       className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm font-mono text-gray-100 resize-none focus:outline-none focus:border-red-500 disabled:opacity-50"/>
                     {!bossResult && <button onClick={()=>setShowHint(h=>!h)} className="text-xs text-gray-500 hover:text-gray-300 mt-1.5 block">{showHint?"▾ Hide":"💡 Hint"}</button>}
