@@ -12,18 +12,18 @@ const LEVELS = [
   { level: 5, title: "Pythonista",        xpNeeded: 1400, icon: "🧙" },
 ];
 
-const getCurrentLevel = (xp) => {
+const getCurrentLevel = (xp: number) => {
   let cur = LEVELS[0];
   for (const l of LEVELS) { if (xp >= l.xpNeeded) cur = l; }
   return cur;
 };
-const getNextLevel = (xp) => {
+const getNextLevel = (xp: number) => {
   for (const l of LEVELS) { if (xp < l.xpNeeded) return l; }
   return null;
 };
 
 // ─── BOSS CHALLENGES ────────────────────────────────────────────────────────
-const BOSSES = {
+const BOSSES: Record<string, { name: string; icon: string; color: string; border: string; intro: string; rounds: Exercise[] }> = {
   foundations: {
     name: "The Indentation Lich",
     icon: "💀",
@@ -108,7 +108,7 @@ const BOSSES = {
 };
 
 // ─── MODULES ─────────────────────────────────────────────────────────────────
-const MODULES = [
+const MODULES: Module[] = [
   {
     id: "foundations", title: "Syntax Refresher", icon: "🧠",
     color: "from-rose-600 to-pink-700", tag: "Start here",
@@ -310,13 +310,41 @@ interface Exercise {
   prompt: string;
   answer: string;
   hint: string;
-  label: string;
+  label?: string;
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  theory: string;
+  exercises: Exercise[];
+}
+
+interface Module {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  tag?: string;
+  description: string;
+  lessons: Lesson[];
 }
 
 interface GradeResult {
   correct: boolean;
   feedback: string;
 }
+
+type LevelInfo = typeof LEVELS[number];
+
+interface ModuleProgress {
+  exercises: Record<string, boolean>;
+  bossDefeated: boolean;
+  bossRound: number;
+  bossAnswers: Record<number, string>;
+}
+
+type Progress = Record<string, ModuleProgress>;
 
 async function gradeWithClaude(exercise: Exercise, userAnswer: string): Promise<GradeResult> {
   const typeDesc: Record<Exercise["type"], string> = {
@@ -366,27 +394,27 @@ or
 // ─── APP ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState("home"); // home|module|lesson|boss|levelup
-  const [activeMod, setActiveMod] = useState(null);
-  const [activeLesson, setActiveLesson] = useState(null);
+  const [activeMod, setActiveMod] = useState<Module | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [exIdx, setExIdx] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [grading, setGrading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<GradeResult | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [xp, setXp] = useState(0);
   const [prevXp, setPrevXp] = useState(0);
   const [streak, setStreak] = useState(0);
-  const [showXpPop, setShowXpPop] = useState(false);
-  const [levelUpData, setLevelUpData] = useState(null);
-  const [progress, setProgress] = useState(() => {
-    const p = {};
+  const [showXpPop, setShowXpPop] = useState<number | false>(false);
+  const [levelUpData, setLevelUpData] = useState<LevelInfo | null>(null);
+  const [progress, setProgress] = useState<Progress>(() => {
+    const p: Progress = {};
     MODULES.forEach(m => { p[m.id] = { exercises:{}, bossDefeated:false, bossRound:0, bossAnswers:{} }; });
     return p;
   });
   // boss state
   const [bossRound, setBossRound] = useState(0);
   const [bossAnswers, setBossAnswers] = useState({});
-  const [bossResult, setBossResult] = useState(null);
+  const [bossResult, setBossResult] = useState<GradeResult | null>(null);
   const [bossWon, setBossWon] = useState(false);
   const [bossIntroSeen, setBossIntroSeen] = useState(false);
 
@@ -395,7 +423,7 @@ export default function App() {
   const xpForBar = nextLevel ? xp - curLevel.xpNeeded : XP_PER_EXERCISE;
   const xpNeededForBar = nextLevel ? nextLevel.xpNeeded - curLevel.xpNeeded : XP_PER_EXERCISE;
 
-  const addXp = (amount) => {
+  const addXp = (amount: number) => {
     setPrevXp(xp);
     const newXp = xp + amount;
     const oldLevel = getCurrentLevel(xp);
@@ -411,19 +439,21 @@ export default function App() {
   const totalEx = MODULES.reduce((s,m) => s + m.lessons.reduce((a,l) => a + l.exercises.length, 0), 0);
   const doneEx = Object.values(progress).reduce((s,mp) => s + Object.values(mp.exercises).filter(Boolean).length, 0);
 
-  const lessonDone = (lid) => {
+  const lessonDone = (lid: string) => {
     const mod = MODULES.find(m => m.lessons.some(l => l.id === lid));
     if (!mod) return 0;
     const lesson = mod.lessons.find(l => l.id === lid);
+    if (!lesson) return 0;
     return lesson.exercises.filter((_,i) => progress[mod.id]?.exercises[`${lid}-${i}`]).length;
   };
 
-  const allLessonsDone = (modId) => {
+  const allLessonsDone = (modId: string) => {
     const mod = MODULES.find(m => m.id === modId);
+    if (!mod) return false;
     return mod.lessons.every(l => l.exercises.every((_,i) => progress[modId]?.exercises[`${l.id}-${i}`]));
   };
 
-  const openLesson = (lesson, mod) => {
+  const openLesson = (lesson: Lesson, mod: Module) => {
     setActiveMod(mod); setActiveLesson(lesson);
     setExIdx(0); setUserAnswer(""); setResult(null); setShowHint(false);
     setScreen("lesson");
@@ -433,7 +463,7 @@ export default function App() {
   const meta = currentEx ? EXERCISE_META[currentEx.type] : null;
 
   const handleSubmit = async () => {
-    if (!userAnswer.trim()) return;
+    if (!userAnswer.trim() || !currentEx || !activeLesson || !activeMod) return;
     setGrading(true);
     try {
       const r = await gradeWithClaude(currentEx, userAnswer);
@@ -444,12 +474,12 @@ export default function App() {
         setStreak(s => s + 1);
         addXp(XP_PER_EXERCISE);
       } else if (!r.correct) setStreak(0);
-    } catch(e) { setResult({ correct:false, feedback: e.message || "Couldn't grade — check connection and try again." }); }
+    } catch(e) { setResult({ correct:false, feedback: e instanceof Error ? e.message : "Couldn't grade — check connection and try again." }); }
     setGrading(false);
   };
 
   const nextExercise = () => {
-    if (exIdx + 1 < activeLesson.exercises.length) {
+    if (activeLesson && exIdx + 1 < activeLesson.exercises.length) {
       setExIdx(i => i + 1); setUserAnswer(""); setResult(null); setShowHint(false);
     } else {
       setScreen("module");
@@ -466,10 +496,10 @@ export default function App() {
   };
 
   const handleBossSubmit = async () => {
-    if (!userAnswer.trim()) return;
+    if (!userAnswer.trim() || !activeMod) return;
     setGrading(true);
     try {
-      const r = await gradeWithClaude(bossRounds[bossRound], userAnswer);
+      const r = await gradeWithClaude(bossRounds[bossRound] as Exercise, userAnswer);
       setBossResult(r);
       if (r.correct) {
         const newAnswers = { ...bossAnswers, [bossRound]: userAnswer };
@@ -483,7 +513,7 @@ export default function App() {
           }
         }
       } else setStreak(0);
-    } catch(e) { setBossResult({ correct:false, feedback: e.message || "Couldn't grade — check connection and try again." }); }
+    } catch(e) { setBossResult({ correct:false, feedback: e instanceof Error ? e.message : "Couldn't grade — check connection and try again." }); }
     setGrading(false);
   };
 
@@ -651,7 +681,7 @@ export default function App() {
       )}
 
       {/* ── LESSON ── */}
-      {screen === "lesson" && activeLesson && currentEx && (
+      {screen === "lesson" && activeLesson && currentEx && activeMod && meta && (
         <div className="max-w-2xl mx-auto px-4 py-8">
           <button onClick={()=>setScreen("module")} className="text-sm text-gray-400 hover:text-white mb-4 flex items-center gap-1">‹ {activeMod.title}</button>
           <div className="flex items-center justify-between mb-4">
@@ -810,17 +840,17 @@ function Spinner() {
   return <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>;
 }
 
-function TheoryRenderer({ text }) {
+function TheoryRenderer({ text }: { text: string }) {
   const parts = text.split(/(```[\s\S]*?```)/g);
   return (
     <div className="space-y-2">
-      {parts.map((part, i) => {
+      {parts.map((part: string, i: number) => {
         if (part.startsWith("```")) {
           return <pre key={i} className="bg-gray-950 border border-gray-700 rounded-lg p-3 text-xs overflow-x-auto text-gray-200 font-mono">{part.replace(/```\w*\n?/,"").replace(/```$/,"")}</pre>;
         }
         return (
           <div key={i} className="space-y-1">
-            {part.split("\n").filter(l=>l.trim()).map((line,j) => (
+            {part.split("\n").filter((l: string)=>l.trim()).map((line: string, j: number) => (
               <p key={j} className="text-sm text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{__html:
                 line.replace(/\*\*(.*?)\*\*/g,'<strong class="text-white">$1</strong>')
                     .replace(/`([^`]+)`/g,'<code class="bg-gray-700 text-emerald-300 px-1 rounded text-xs font-mono">$1</code>')
