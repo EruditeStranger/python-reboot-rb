@@ -35,19 +35,22 @@ const BOSSES: Record<string, { name: string; icon: string; color: string; border
         type: "bugfix",
         prompt: "Round 1/3 — Fix ALL bugs in this code. It should print the sum of even numbers from 0 to 10.\n\nTotal = 0\nfor i in range(0 11):\n    if i % 2 = 0\n        total =+ i\nprint(Total)",
         answer: "total = 0\nfor i in range(0, 11):\n    if i % 2 == 0:\n        total += i\nprint(total)",
-        hint: "5 bugs: variable name case, missing comma in range, = vs ==, missing colon, =+ vs +="
+        hint: "5 bugs: variable name case, missing comma in range, = vs ==, missing colon, =+ vs +=",
+        refs: [{ label: "range()", url: "https://docs.python.org/3/library/stdtypes.html#range" }, { label: "Augmented assignment (+=)", url: "https://docs.python.org/3/reference/simple_stmts.html#augmented-assignment-statements" }]
       },
       {
         type: "scratch",
         prompt: "Round 2/3 — Write a function called fizzbuzz(n) that returns 'Fizz' if n is divisible by 3, 'Buzz' if divisible by 5, 'FizzBuzz' if both, otherwise the number as a string.",
         answer: "def fizzbuzz(n):\n    if n % 3 == 0 and n % 5 == 0:\n        return 'FizzBuzz'\n    elif n % 3 == 0:\n        return 'Fizz'\n    elif n % 5 == 0:\n        return 'Buzz'\n    else:\n        return str(n)",
-        hint: "Check the combined case (FizzBuzz) first, before the individual checks."
+        hint: "Check the combined case (FizzBuzz) first, before the individual checks.",
+        refs: [{ label: "if/elif/else", url: "https://docs.python.org/3/tutorial/controlflow.html#if-statements" }, { label: "str()", url: "https://docs.python.org/3/library/stdtypes.html#str" }]
       },
       {
         type: "output",
         prompt: "Round 3/3 — Final strike. What does this print?\n\ndef mystery(items):\n    result = {}\n    for i, item in enumerate(items):\n        result[item] = i\n    return result\n\nprint(mystery(['a', 'b', 'a']))",
         answer: "{'a': 2, 'b': 1}",
-        hint: "enumerate gives (index, value). When 'a' appears twice, the second index overwrites the first."
+        hint: "enumerate gives (index, value). When 'a' appears twice, the second index overwrites the first.",
+        refs: [{ label: "enumerate()", url: "https://docs.python.org/3/library/functions.html#enumerate" }, { label: "Dictionaries", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }]
       }
     ]
   },
@@ -62,19 +65,22 @@ const BOSSES: Record<string, { name: string; icon: string; color: string; border
         type: "scratch",
         prompt: "Round 1/3 — Rewrite this as a single list comprehension.\n\nnumbers = [1,2,3,4,5,6,7,8,9,10]\nresult = []\nfor n in numbers:\n    if n % 2 == 0:\n        result.append(n ** 2)",
         answer: "result = [n**2 for n in numbers if n % 2 == 0]",
-        hint: "Pattern: [expression for item in iterable if condition]"
+        hint: "Pattern: [expression for item in iterable if condition]",
+        refs: [{ label: "List comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions" }]
       },
       {
         type: "bugfix",
         prompt: "Round 2/3 — This unpacking is unnecessarily verbose. Rewrite lines 2-4 as a single unpacking line.\n\ncoords = (51.5, -0.12, 11)\nlat = coords[0]\nlon = coords[1]\nalt = coords[2]",
         answer: "coords = (51.5, -0.12, 11)\nlat, lon, alt = coords",
-        hint: "Three variables on the left, tuple on the right."
+        hint: "Three variables on the left, tuple on the right.",
+        refs: [{ label: "Tuples and sequences", url: "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences" }]
       },
       {
         type: "output",
         prompt: "Round 3/3 — What does this print?\n\ndata = [('alice', 90), ('bob', 75), ('carol', 88)]\nbest = max(data, key=lambda x: x[1])\nprint(best[0])",
         answer: "alice",
-        hint: "max() with a key finds the tuple with the highest second element. Then [0] gets the name."
+        hint: "max() with a key finds the tuple with the highest second element. Then [0] gets the name.",
+        refs: [{ label: "max()", url: "https://docs.python.org/3/library/functions.html#max" }, { label: "Lambda expressions", url: "https://docs.python.org/3/tutorial/controlflow.html#lambda-expressions" }]
       }
     ]
   },
@@ -89,19 +95,22 @@ const BOSSES: Record<string, { name: string; icon: string; color: string; border
         type: "bugfix",
         prompt: "Round 1/3 — Add correct type hints and fix the mutable default arg trap.\n\ndef register(name, tags=[]):\n    tags.append(name)\n    return tags",
         answer: "def register(name: str, tags: list[str] | None = None) -> list[str]:\n    if tags is None:\n        tags = []\n    tags.append(name)\n    return tags",
-        hint: "Replace [] with None, guard inside the function, and annotate all params and return."
+        hint: "Replace [] with None, guard inside the function, and annotate all params and return.",
+        refs: [{ label: "Function annotations", url: "https://docs.python.org/3/tutorial/controlflow.html#function-annotations" }, { label: "Common gotcha: mutable defaults", url: "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects" }]
       },
       {
         type: "scratch",
         prompt: "Round 2/3 — Write a type-annotated function min_max(numbers) that returns both the minimum and maximum of a list of floats as a tuple.",
         answer: "def min_max(numbers: list[float]) -> tuple[float, float]:\n    return min(numbers), max(numbers)",
-        hint: "Return type is tuple[float, float]. Python packs two return values into a tuple automatically."
+        hint: "Return type is tuple[float, float]. Python packs two return values into a tuple automatically.",
+        refs: [{ label: "Function annotations", url: "https://docs.python.org/3/tutorial/controlflow.html#function-annotations" }, { label: "min() / max()", url: "https://docs.python.org/3/library/functions.html#min" }]
       },
       {
         type: "output",
         prompt: "Round 3/3 — What prints? Think carefully about scope.\n\nx = 'global'\n\ndef outer():\n    x = 'outer'\n    def inner():\n        print(x)\n    inner()\n\nouter()\nprint(x)",
         answer: "outer\nglobal",
-        hint: "inner() sees outer's x via closure. The global x is never touched."
+        hint: "inner() sees outer's x via closure. The global x is never touched.",
+        refs: [{ label: "Scopes and namespaces", url: "https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces" }, { label: "Closures (nested functions)", url: "https://docs.python.org/3/faq/programming.html#what-are-the-rules-for-local-and-global-variables-in-python" }]
       }
     ]
   }
@@ -142,9 +151,9 @@ else:
 
 **Rules:** colon after every block header, 4-space indent, \`elif\` not \`else if\`, \`and\`/\`or\`/\`not\` not \`&&\`/\`||\`/\`!\`.`,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\nfor i in range(4):\n    if i % 2 != 0:\n        print(i * 10)", answer: "10\n30", hint: "range(4) = 0,1,2,3. Which are odd?" },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Should print 1 through 5. Two bugs — find and fix them.\n\nfor i in range(1, 5)\n    print[i]", answer: "for i in range(1, 6):\n    print(i)", hint: "Missing colon, wrong brackets on print, and off-by-one in range." },
-          { type: "scratch", label: "Write from Scratch", prompt: "Write a loop that prints every even number from 2 to 10 inclusive.", answer: "for i in range(2, 11, 2):\n    print(i)", hint: "range() takes an optional step argument." }
+          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\nfor i in range(4):\n    if i % 2 != 0:\n        print(i * 10)", answer: "10\n30", hint: "range(4) = 0,1,2,3. Which are odd?", refs: [{ label: "range()", url: "https://docs.python.org/3/library/stdtypes.html#range" }, { label: "if statements", url: "https://docs.python.org/3/tutorial/controlflow.html#if-statements" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Should print 1 through 5. Two bugs — find and fix them.\n\nfor i in range(1, 5)\n    print[i]", answer: "for i in range(1, 6):\n    print(i)", hint: "Missing colon, wrong brackets on print, and off-by-one in range.", refs: [{ label: "for statements", url: "https://docs.python.org/3/tutorial/controlflow.html#for-statements" }, { label: "print()", url: "https://docs.python.org/3/library/functions.html#print" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a loop that prints every even number from 2 to 10 inclusive.", answer: "for i in range(2, 11, 2):\n    print(i)", hint: "range() takes an optional step argument.", refs: [{ label: "range()", url: "https://docs.python.org/3/library/stdtypes.html#range" }, { label: "for statements", url: "https://docs.python.org/3/tutorial/controlflow.html#for-statements" }] }
         ]
       },
       {
@@ -174,9 +183,9 @@ def min_max(nums):
 lo, hi = min_max([3,1,7])
 \`\`\``,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "What prints?\n\ndef add(a, b=10):\n    return a + b\n\nprint(add(5))\nprint(add(5, 3))", answer: "15\n8", hint: "First call uses default b=10." },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Two bugs. Fix them.\n\ndef square(n)\n    return n * n\n\nprint(square(4))", answer: "def square(n):\n    return n * n\n\nprint(square(4))", hint: "Missing colon after def. Check indentation too." },
-          { type: "scratch", label: "Write from Scratch", prompt: "Write celsius_to_fahrenheit(c) that returns F = C * 9/5 + 32.", answer: "def celsius_to_fahrenheit(c):\n    return c * 9/5 + 32", hint: "def, one parameter, return with the formula." }
+          { type: "output", label: "Predict the Output", prompt: "What prints?\n\ndef add(a, b=10):\n    return a + b\n\nprint(add(5))\nprint(add(5, 3))", answer: "15\n8", hint: "First call uses default b=10.", refs: [{ label: "Defining functions", url: "https://docs.python.org/3/tutorial/controlflow.html#defining-functions" }, { label: "Default argument values", url: "https://docs.python.org/3/tutorial/controlflow.html#default-argument-values" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Two bugs. Fix them.\n\ndef square(n)\n    return n * n\n\nprint(square(4))", answer: "def square(n):\n    return n * n\n\nprint(square(4))", hint: "Missing colon after def. Check indentation too.", refs: [{ label: "Defining functions", url: "https://docs.python.org/3/tutorial/controlflow.html#defining-functions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write celsius_to_fahrenheit(c) that returns F = C * 9/5 + 32.", answer: "def celsius_to_fahrenheit(c):\n    return c * 9/5 + 32", hint: "def, one parameter, return with the formula.", refs: [{ label: "Defining functions", url: "https://docs.python.org/3/tutorial/controlflow.html#defining-functions" }, { label: "return statement", url: "https://docs.python.org/3/reference/simple_stmts.html#the-return-statement" }] }
         ]
       },
       {
@@ -200,9 +209,9 @@ for k, v in d.items():
     print(k, v)
 \`\`\``,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: 'What prints?\n\nd = {"x": 3, "y": 7}\nfor k, v in d.items():\n    print(k, v * 2)', answer: "x 6\ny 14", hint: "Loop over items() gives key and value. Multiply each value by 2." },
-          { type: "bugfix", label: "Fix the Bug", prompt: 'Two errors. Fix them.\n\nfruits = ["apple", "banana"]\nfruits.add("cherry")\nprint(length(fruits))', answer: 'fruits = ["apple", "banana"]\nfruits.append("cherry")\nprint(len(fruits))', hint: "Lists use append(), not add(). Length is len(), not length()." },
-          { type: "scratch", label: "Write from Scratch", prompt: 'Create a dict "person" with keys "name" and "age", then print each key-value pair with a loop.', answer: 'person = {"name": "Rahul", "age": 30}\nfor k, v in person.items():\n    print(k, v)', hint: "Create with {}, loop with .items()." }
+          { type: "output", label: "Predict the Output", prompt: 'What prints?\n\nd = {"x": 3, "y": 7}\nfor k, v in d.items():\n    print(k, v * 2)', answer: "x 6\ny 14", hint: "Loop over items() gives key and value. Multiply each value by 2.", refs: [{ label: "dict.items()", url: "https://docs.python.org/3/library/stdtypes.html#dict.items" }, { label: "Dictionaries", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: 'Two errors. Fix them.\n\nfruits = ["apple", "banana"]\nfruits.add("cherry")\nprint(length(fruits))', answer: 'fruits = ["apple", "banana"]\nfruits.append("cherry")\nprint(len(fruits))', hint: "Lists use append(), not add(). Length is len(), not length().", refs: [{ label: "list.append()", url: "https://docs.python.org/3/tutorial/datastructures.html#more-on-lists" }, { label: "len()", url: "https://docs.python.org/3/library/functions.html#len" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: 'Create a dict "person" with keys "name" and "age", then print each key-value pair with a loop.', answer: 'person = {"name": "Rahul", "age": 30}\nfor k, v in person.items():\n    print(k, v)', hint: "Create with {}, loop with .items().", refs: [{ label: "Dictionaries", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }, { label: "Looping techniques", url: "https://docs.python.org/3/tutorial/datastructures.html#looping-techniques" }] }
         ]
       }
     ]
@@ -226,9 +235,9 @@ squares = [x**2 for x in range(10)]
 evens   = [x for x in range(20) if x % 2 == 0]
 \`\`\``,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "What does this produce?\n\nresult = [x**2 for x in range(5) if x % 2 == 0]\nprint(result)", answer: "[0, 4, 16]", hint: "range(5)=0-4. Even ones are 0,2,4. Square them." },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Should uppercase each word.\n\nwords = ['hello','world']\nresult = [w.upper for w in words]", answer: "words = ['hello','world']\nresult = [w.upper() for w in words]", hint: "upper is a method — needs ()." },
-          { type: "scratch", label: "Write from Scratch", prompt: "One-liner: list of lengths of each word in:\nwords = ['python', 'is', 'fun']", answer: "lengths = [len(w) for w in words]", hint: "Apply len() inside the comprehension." }
+          { type: "output", label: "Predict the Output", prompt: "What does this produce?\n\nresult = [x**2 for x in range(5) if x % 2 == 0]\nprint(result)", answer: "[0, 4, 16]", hint: "range(5)=0-4. Even ones are 0,2,4. Square them.", refs: [{ label: "List comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Should uppercase each word.\n\nwords = ['hello','world']\nresult = [w.upper for w in words]", answer: "words = ['hello','world']\nresult = [w.upper() for w in words]", hint: "upper is a method — needs ().", refs: [{ label: "str.upper()", url: "https://docs.python.org/3/library/stdtypes.html#str.upper" }, { label: "List comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "One-liner: list of lengths of each word in:\nwords = ['python', 'is', 'fun']", answer: "lengths = [len(w) for w in words]", hint: "Apply len() inside the comprehension.", refs: [{ label: "List comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions" }, { label: "len()", url: "https://docs.python.org/3/library/functions.html#len" }] }
         ]
       },
       {
@@ -240,9 +249,9 @@ first, *rest = [1, 2, 3, 4, 5]
 a, b = b, a   # swap
 \`\`\``,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "What prints?\n\nfirst, *middle, last = [10,20,30,40,50]\nprint(first)\nprint(middle)\nprint(last)", answer: "10\n[20, 30, 40]\n50", hint: "* in the middle collects everything that's not first or last." },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Should swap a and b. Fix it.\n\na = 1\nb = 2\na = b\nb = a\nprint(a, b)  # want: 2 1", answer: "a = 1\nb = 2\na, b = b, a\nprint(a, b)", hint: "Do it in one line: a, b = b, a" },
-          { type: "scratch", label: "Write from Scratch", prompt: "Unpack coords = (3, 7, 2) into x, y, z and print their sum.", answer: "x, y, z = coords\nprint(x + y + z)", hint: "Three vars on the left." }
+          { type: "output", label: "Predict the Output", prompt: "What prints?\n\nfirst, *middle, last = [10,20,30,40,50]\nprint(first)\nprint(middle)\nprint(last)", answer: "10\n[20, 30, 40]\n50", hint: "* in the middle collects everything that's not first or last.", refs: [{ label: "Tuples and sequences", url: "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences" }, { label: "Assignment statements (*target)", url: "https://docs.python.org/3/reference/simple_stmts.html#assignment-statements" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Should swap a and b. Fix it.\n\na = 1\nb = 2\na = b\nb = a\nprint(a, b)  # want: 2 1", answer: "a = 1\nb = 2\na, b = b, a\nprint(a, b)", hint: "Do it in one line: a, b = b, a", refs: [{ label: "Tuples and sequences", url: "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Unpack coords = (3, 7, 2) into x, y, z and print their sum.", answer: "x, y, z = coords\nprint(x + y + z)", hint: "Three vars on the left.", refs: [{ label: "Tuples and sequences", url: "https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences" }, { label: "Unpacking", url: "https://docs.python.org/3/tutorial/controlflow.html#unpacking-argument-lists" }] }
         ]
       }
     ]
@@ -268,9 +277,9 @@ def process(data: list[str], flag: bool = False) -> dict:
 \`\`\`
 Type hints power IDE autocomplete and \`mypy\` — they don't enforce at runtime.`,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "Type hints don't affect runtime. What prints?\n\ndef add(a: int, b: int) -> int:\n    return a + b\n\nprint(add(2.5, 3.5))", answer: "6.0", hint: "Python doesn't enforce type hints — floats add normally." },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Fix the return type annotation.\n\ndef greet(name: str) str:\n    return 'Hello, ' + name", answer: "def greet(name: str) -> str:\n    return 'Hello, ' + name", hint: "Return type uses -> before the type." },
-          { type: "scratch", label: "Write from Scratch", prompt: "Write multiply(a, b) with float type hints and a one-line docstring.", answer: 'def multiply(a: float, b: float) -> float:\n    """Return the product of a and b."""\n    return a * b', hint: "Annotate params and return, then triple-quoted docstring." }
+          { type: "output", label: "Predict the Output", prompt: "Type hints don't affect runtime. What prints?\n\ndef add(a: int, b: int) -> int:\n    return a + b\n\nprint(add(2.5, 3.5))", answer: "6.0", hint: "Python doesn't enforce type hints — floats add normally.", refs: [{ label: "Type hints (typing module)", url: "https://docs.python.org/3/library/typing.html" }, { label: "Function annotations", url: "https://docs.python.org/3/tutorial/controlflow.html#function-annotations" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Fix the return type annotation.\n\ndef greet(name: str) str:\n    return 'Hello, ' + name", answer: "def greet(name: str) -> str:\n    return 'Hello, ' + name", hint: "Return type uses -> before the type.", refs: [{ label: "Function annotations", url: "https://docs.python.org/3/tutorial/controlflow.html#function-annotations" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write multiply(a, b) with float type hints and a one-line docstring.", answer: 'def multiply(a: float, b: float) -> float:\n    """Return the product of a and b."""\n    return a * b', hint: "Annotate params and return, then triple-quoted docstring.", refs: [{ label: "Function annotations", url: "https://docs.python.org/3/tutorial/controlflow.html#function-annotations" }, { label: "Docstring conventions", url: "https://peps.python.org/pep-0257/" }] }
         ]
       },
       {
@@ -289,9 +298,9 @@ def add_item(item, items=None):
     return items
 \`\`\``,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "Careful — it's a trap.\n\ndef append_val(val, lst=[]):\n    lst.append(val)\n    return lst\n\nprint(append_val(1))\nprint(append_val(2))\nprint(append_val(3))", answer: "[1]\n[1, 2]\n[1, 2, 3]", hint: "The default list is shared — it keeps accumulating." },
-          { type: "bugfix", label: "Fix the Bug", prompt: "Fix so each call without a list starts fresh.\n\ndef collect(item, results=[]):\n    results.append(item)\n    return results", answer: "def collect(item, results=None):\n    if results is None:\n        results = []\n    results.append(item)\n    return results", hint: "Default None, initialise inside." },
-          { type: "scratch", label: "Write from Scratch", prompt: "Write safe make_tag_list(tag, tags=None) that appends tag to the list without the mutable default bug.", answer: "def make_tag_list(tag, tags=None):\n    if tags is None:\n        tags = []\n    tags.append(tag)\n    return tags", hint: "Default None, guard with if None, then append." }
+          { type: "output", label: "Predict the Output", prompt: "Careful — it's a trap.\n\ndef append_val(val, lst=[]):\n    lst.append(val)\n    return lst\n\nprint(append_val(1))\nprint(append_val(2))\nprint(append_val(3))", answer: "[1]\n[1, 2]\n[1, 2, 3]", hint: "The default list is shared — it keeps accumulating.", refs: [{ label: "Default argument values", url: "https://docs.python.org/3/tutorial/controlflow.html#default-argument-values" }, { label: "Common gotcha: mutable defaults", url: "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "Fix so each call without a list starts fresh.\n\ndef collect(item, results=[]):\n    results.append(item)\n    return results", answer: "def collect(item, results=None):\n    if results is None:\n        results = []\n    results.append(item)\n    return results", hint: "Default None, initialise inside.", refs: [{ label: "Common gotcha: mutable defaults", url: "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write safe make_tag_list(tag, tags=None) that appends tag to the list without the mutable default bug.", answer: "def make_tag_list(tag, tags=None):\n    if tags is None:\n        tags = []\n    tags.append(tag)\n    return tags", hint: "Default None, guard with if None, then append.", refs: [{ label: "Common gotcha: mutable defaults", url: "https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects" }, { label: "list.append()", url: "https://docs.python.org/3/tutorial/datastructures.html#more-on-lists" }] }
         ]
       }
     ]
@@ -305,12 +314,18 @@ const EXERCISE_META = {
 };
 
 
+interface RefLink {
+  label: string;
+  url: string;
+}
+
 interface Exercise {
   type: "output" | "bugfix" | "scratch";
   prompt: string;
   answer: string;
   hint: string;
   label?: string;
+  refs?: RefLink[];
 }
 
 interface Lesson {
@@ -731,6 +746,14 @@ export default function App() {
           <div className={`border rounded-xl p-4 mb-3 ${meta.bg}`}>
             <div className={`flex items-center gap-2 font-bold mb-2 text-sm ${meta.color}`}>{meta.icon} {meta.label}</div>
             <pre className="text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{currentEx.prompt}</pre>
+            {currentEx.refs && currentEx.refs.length > 0 && (
+              <div className="mt-3 pt-2 border-t border-gray-700/50 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-xs text-gray-500">📚 Docs:</span>
+                {currentEx.refs.map((ref, ri) => (
+                  <a key={ri} href={ref.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2">{ref.label}</a>
+                ))}
+              </div>
+            )}
           </div>
           <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} onKeyDown={handleTab} disabled={!!result}
             placeholder={currentEx.type==="output"?"Type what you think prints...":"Write your Python code here..."}
@@ -808,6 +831,14 @@ export default function App() {
                     <div className={`border rounded-xl p-4 mb-3 ${rmeta.bg}`}>
                       <div className={`flex items-center gap-2 font-bold mb-2 text-sm ${rmeta.color}`}>{rmeta.icon} {rmeta.label}</div>
                       <pre className="text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{round.prompt}</pre>
+                      {round.refs && round.refs.length > 0 && (
+                        <div className="mt-3 pt-2 border-t border-gray-700/50 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="text-xs text-gray-500">📚 Docs:</span>
+                          {round.refs.map((ref: RefLink, ri: number) => (
+                            <a key={ri} href={ref.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2">{ref.label}</a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} onKeyDown={handleTab} disabled={!!bossResult}
                       placeholder="Write your answer..." rows={7}
