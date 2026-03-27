@@ -6,11 +6,14 @@ const XP_PER_EXERCISE = 50;
 const XP_PER_DRILL = 25;
 const XP_PER_BOSS = 150;
 const LEVELS = [
-  { level: 1, title: "Script Kiddie",     xpNeeded: 0,    icon: "🥚" },
-  { level: 2, title: "Loop Wrangler",     xpNeeded: 200,  icon: "🐣" },
-  { level: 3, title: "Function Forger",   xpNeeded: 500,  icon: "🐍" },
-  { level: 4, title: "Dict Whisperer",    xpNeeded: 900,  icon: "⚗️" },
-  { level: 5, title: "Pythonista",        xpNeeded: 1400, icon: "🧙" },
+  { level: 1, title: "Script Kiddie",       xpNeeded: 0,    icon: "🥚" },
+  { level: 2, title: "Loop Wrangler",       xpNeeded: 200,  icon: "🐣" },
+  { level: 3, title: "Function Forger",     xpNeeded: 500,  icon: "🐍" },
+  { level: 4, title: "Dict Whisperer",      xpNeeded: 900,  icon: "⚗️" },
+  { level: 5, title: "Exception Tamer",     xpNeeded: 1400, icon: "🛡️" },
+  { level: 6, title: "Decorator Artisan",   xpNeeded: 2200, icon: "🎭" },
+  { level: 7, title: "Generator Sage",      xpNeeded: 3200, icon: "♾️" },
+  { level: 8, title: "Pythonista",          xpNeeded: 4500, icon: "🧙" },
 ];
 
 const getCurrentLevel = (xp: number) => {
@@ -114,7 +117,87 @@ const BOSSES: Record<string, { name: string; icon: string; color: string; border
         refs: [{ label: "Scopes and namespaces", url: "https://docs.python.org/3/tutorial/classes.html#python-scopes-and-namespaces" }, { label: "Closures (nested functions)", url: "https://docs.python.org/3/faq/programming.html#what-are-the-rules-for-local-and-global-variables-in-python" }]
       }
     ]
-  }
+  },
+  "error-handling": {
+    name: "The Exception Phantom", icon: "\u{1F47B}",
+    color: "from-amber-900 to-orange-950", border: "border-amber-700",
+    intro: "I am the Exception Phantom... Every uncaught error feeds my power. Show me you can trap what others fear!",
+    rounds: [
+      { type: "bugfix", prompt: "Round 1/3 \u2014 Fix this code that silently swallows exceptions.\n\ntry:\n    result = int(\"not_a_number\")\nexcept:\n    pass\n\nprint(\"Continuing...\")\n# Should print the error info AND re-raise", answer: "try:\n    result = int(\"not_a_number\")\nexcept Exception as e:\n    print(f\"{type(e).__name__}: {e}\")\n    raise\n\nprint(\"Continuing...\")", hint: "Bare 'except: pass' hides all errors. Catch Exception as e, print info, then re-raise.", refs: [{ label: "Exception Handling", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] },
+      { type: "output", prompt: "Round 2/3 \u2014 What does this print?\n\nclass PhantomError(ValueError):\n    pass\n\ndef haunt():\n    try:\n        raise PhantomError(\"boo\")\n    except ValueError as e:\n        print(f\"caught: {e}\")\n    finally:\n        print(\"finally\")\n\nhaunt()", answer: "caught: boo\nfinally", hint: "PhantomError is a subclass of ValueError, so except ValueError catches it.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write a context manager class suppress that suppresses specified exception types and stores the last one in .exception.\n\n# with suppress(ValueError, TypeError) as s:\n#     int(\"bad\")\n# print(s.exception)  # ValueError: invalid literal...", answer: "class suppress:\n    def __init__(self, *exceptions):\n        self.exceptions = exceptions\n        self.exception = None\n    def __enter__(self):\n        return self\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        if exc_type and issubclass(exc_type, self.exceptions):\n            self.exception = exc_val\n            return True\n        return False", hint: "Return True from __exit__ to suppress. Use issubclass to check.", refs: [{ label: "Context Manager Types", url: "https://docs.python.org/3/reference/datamodel.html#context-managers" }] }
+    ]
+  },
+  "comprehensions-adv": {
+    name: "The Nested Nightmare", icon: "\u{1F578}\uFE0F",
+    color: "from-purple-900 to-indigo-950", border: "border-purple-700",
+    intro: "I weave webs of nested loops and conditions... Can you unravel my comprehensions?",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 What does this print?\n\nmatrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nresult = [row[i] for i in range(3) for row in matrix]\nprint(result)", answer: "[1, 4, 7, 2, 5, 8, 3, 6, 9]", hint: "Outer loop is i, inner is row. This reads columns: i=0 gives row[0] for each row.", refs: [{ label: "List Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 Should invert dict mapping values to LISTS of keys.\n\noriginal = {\"a\": 1, \"b\": 2, \"c\": 1}\ninverted = {v: k for k, v in original.items()}\nprint(inverted)\n# Expected: {1: ['a', 'c'], 2: ['b']}", answer: "from collections import defaultdict\n\noriginal = {\"a\": 1, \"b\": 2, \"c\": 1}\ninverted = defaultdict(list)\nfor k, v in original.items():\n    inverted[v].append(k)\ninverted = dict(inverted)\nprint(inverted)", hint: "A dict comprehension can't accumulate multiple values per key. Use defaultdict(list).", refs: [{ label: "collections.defaultdict", url: "https://docs.python.org/3/library/collections.html#collections.defaultdict" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Using a single dict comprehension, map each character\nto its frequency count. Only include characters appearing more than once.\n\ntext = \"abracadabra\"\n# Expected: {'a': 5, 'b': 2, 'r': 2}", answer: "text = \"abracadabra\"\nfreq = {c: text.count(c) for c in set(text) if text.count(c) > 1}", hint: "Use set(text) for unique chars, text.count(c) for frequency, if clause to filter.", refs: [{ label: "Dict Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }] }
+    ]
+  },
+  "fstrings": {
+    name: "The Format Fiend", icon: "\u{1F4DC}",
+    color: "from-emerald-900 to-green-950", border: "border-emerald-700",
+    intro: "I twist every string into unreadable chaos! Only a master of f-string formatting can defeat my garbled output!",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 Predict the output:\n\nval = 42.567\nname = \"pi-ish\"\nprint(f\"{name:>10}: {val:08.2f}\")\nprint(f\"{1000000:,.0f}\")\nprint(f\"{'test':*^20}\")", answer: "    pi-ish: 00042.57\n1,000,000\n********test********", hint: ">10 right-aligns. 08.2f zero-pads to width 8. *^20 centers with * fill.", refs: [{ label: "Format Specification Mini-Language", url: "https://docs.python.org/3/library/string.html#format-specification-mini-language" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 Fix the quoting issue:\n\ndata = {\"key\": \"value\"}\nprice = 19.99\nprint(f\"Dict: {data[\"key\"]}\")\nprint(f\"Debug: {price = :.2f}\")", answer: "data = {\"key\": \"value\"}\nprice = 19.99\nprint(f\"Dict: {data['key']}\")\nprint(f\"Debug: {price = :.2f}\")", hint: "Inside double-quoted f-string, use single quotes for dict key access.", refs: [{ label: "Formatted String Literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write table_row(name, score, max_score) that returns:\n\"Player_1     ....  85/100  ( 85.0%)\"\n\nname left-aligned 12 chars, dot-filled to 18 total,\nscore as X/Y right-aligned 8 chars, percentage with 1 decimal.", answer: "def table_row(name, score, max_score):\n    pct = score / max_score * 100\n    return f\"{name:.<18s}{score:>4d}/{max_score:<4d} ({pct:5.1f}%)\"", hint: "Use .<18 for dot-filled alignment. > for right-align score.", refs: [{ label: "Format Specification Mini-Language", url: "https://docs.python.org/3/library/string.html#format-specification-mini-language" }] }
+    ]
+  },
+  "context-managers": {
+    name: "The Resource Leak", icon: "\u{1F30A}",
+    color: "from-cyan-900 to-teal-950", border: "border-cyan-700",
+    intro: "I am the Resource Leak... Every unclosed file, every dangling connection flows into my ocean of wasted memory!",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 Predict the flow:\n\nfrom contextlib import contextmanager\n\n@contextmanager\ndef leak_trap(name):\n    print(f\"opening {name}\")\n    try:\n        yield name.upper()\n    finally:\n        print(f\"closing {name}\")\n\nwith leak_trap(\"db\") as conn:\n    print(f\"using {conn}\")\n    print(\"done\")", answer: "opening db\nusing DB\ndone\nclosing db", hint: "Code before yield runs on entry, yield provides the as value, code after runs on exit.", refs: [{ label: "contextlib.contextmanager", url: "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 Timer always prints 0 seconds:\n\nimport time\nfrom contextlib import contextmanager\n\n@contextmanager\ndef timed():\n    start = time.perf_counter()\n    elapsed = time.perf_counter() - start\n    yield\n    print(f\"Elapsed: {elapsed:.4f}s\")\n\nwith timed():\n    time.sleep(0.1)", answer: "import time\nfrom contextlib import contextmanager\n\n@contextmanager\ndef timed():\n    start = time.perf_counter()\n    yield\n    elapsed = time.perf_counter() - start\n    print(f\"Elapsed: {elapsed:.4f}s\")\n\nwith timed():\n    time.sleep(0.1)", hint: "elapsed is computed BEFORE yield. Move it AFTER yield.", refs: [{ label: "contextlib.contextmanager", url: "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write a class TempDir that creates a temp directory on enter,\nyields its path, and deletes it on exit. Use tempfile and shutil.", answer: "import tempfile\nimport shutil\nfrom pathlib import Path\n\nclass TempDir:\n    def __enter__(self):\n        self.path = Path(tempfile.mkdtemp())\n        return self.path\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        shutil.rmtree(self.path)\n        return False", hint: "Use tempfile.mkdtemp() to create, shutil.rmtree() to delete.", refs: [{ label: "tempfile.mkdtemp", url: "https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp" }] }
+    ]
+  },
+  "lambda-functional": {
+    name: "The Anonymous Sorcerer", icon: "\u{1F9D9}",
+    color: "from-violet-900 to-purple-950", border: "border-violet-700",
+    intro: "I have no name, yet I am everywhere... Can you command my anonymous power?",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 What does this produce?\n\nfrom functools import reduce\n\nnums = [3, 1, 4, 1, 5, 9]\na = sorted(nums, key=lambda x: -x)\nb = list(map(lambda x: x ** 2, filter(lambda x: x > 3, nums)))\nc = reduce(lambda acc, x: acc * x, nums)\nprint(a)\nprint(b)\nprint(c)", answer: "[9, 5, 4, 3, 1, 1]\n[16, 25, 81]\n540", hint: "key=-x gives descending. filter keeps >3 [4,5,9], map squares. reduce multiplies all.", refs: [{ label: "functools.reduce", url: "https://docs.python.org/3/library/functools.html#functools.reduce" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 Classic closure trap. Each lambda should multiply by 0, 1, 2:\n\nmultipliers = [lambda x: x * i for i in range(3)]\nprint([m(10) for m in multipliers])\n# Expected: [0, 10, 20]\n# Actual:   [20, 20, 20]", answer: "multipliers = [lambda x, i=i: x * i for i in range(3)]\nprint([m(10) for m in multipliers])", hint: "Lambdas capture i by reference. Use default argument i=i to capture current value.", refs: [{ label: "Lambda Expressions", url: "https://docs.python.org/3/tutorial/controlflow.html#lambda-expressions" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write compose(*funcs) that chains single-arg functions right-to-left.\n\n# f = compose(square, inc, double)\n# f(3)  # square(inc(double(3))) = 49", answer: "from functools import reduce\n\ndef compose(*funcs):\n    return lambda x: reduce(lambda acc, f: f(acc), reversed(funcs), x)", hint: "Use reduce with reversed(funcs). Accumulator starts with x.", refs: [{ label: "functools.reduce", url: "https://docs.python.org/3/library/functools.html#functools.reduce" }] }
+    ]
+  },
+  "dataclasses": {
+    name: "The Boilerplate Golem", icon: "\u{1F5FF}",
+    color: "from-stone-800 to-gray-950", border: "border-stone-600",
+    intro: "I am forged from a thousand lines of __init__, __repr__, __eq__... Can your @dataclass defeat me?",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 What does this print?\n\nfrom dataclasses import dataclass, field\n\n@dataclass(order=True)\nclass Golem:\n    power: int\n    name: str = field(compare=False)\n\na = Golem(10, \"Stone\")\nb = Golem(10, \"Iron\")\nc = Golem(20, \"Diamond\")\nprint(a == b)\nprint(sorted([c, a], key=lambda g: g.power))", answer: "True\n[Golem(power=10, name='Stone'), Golem(power=20, name='Diamond')]", hint: "compare=False on name means equality only checks power.", refs: [{ label: "dataclasses.field", url: "https://docs.python.org/3/library/dataclasses.html#dataclasses.field" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 This dataclass has a mutable default bug:\n\nfrom dataclasses import dataclass\n\n@dataclass\nclass Inventory:\n    items: list = []\n    owner: str = \"player\"\n\ninv = Inventory()\ninv.items.append(\"sword\")", answer: "from dataclasses import dataclass, field\n\n@dataclass\nclass Inventory:\n    items: list = field(default_factory=list)\n    owner: str = \"player\"\n\ninv = Inventory()\ninv.items.append(\"sword\")", hint: "Mutable defaults like [] are shared. Use field(default_factory=list).", refs: [{ label: "Mutable Default Values", url: "https://docs.python.org/3/library/dataclasses.html#mutable-default-values" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Create a frozen dataclass Vector3 with x, y, z (float, default 0.0).\nAdd magnitude() returning Euclidean length, and __add__ for vector addition.\n\n# v = Vector3(1.0, 2.0, 2.0)\n# v.magnitude()  # 3.0\n# v + Vector3(1.0, 0.0, 0.0)  # Vector3(x=2.0, y=2.0, z=2.0)", answer: "from dataclasses import dataclass\nimport math\n\n@dataclass(frozen=True)\nclass Vector3:\n    x: float = 0.0\n    y: float = 0.0\n    z: float = 0.0\n\n    def magnitude(self) -> float:\n        return math.sqrt(self.x**2 + self.y**2 + self.z**2)\n\n    def __add__(self, other):\n        return Vector3(self.x + other.x, self.y + other.y, self.z + other.z)", hint: "frozen=True for immutability. __add__ returns a NEW Vector3.", refs: [{ label: "dataclasses \u2014 frozen", url: "https://docs.python.org/3/library/dataclasses.html#frozen-instances" }] }
+    ]
+  },
+  "decorators": {
+    name: "The Wrapper Wraith", icon: "\u{1F464}",
+    color: "from-fuchsia-900 to-pink-950", border: "border-fuchsia-700",
+    intro: "I wrap myself around your functions like a shadow... Layer after layer. Unwrap me if you dare!",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 Trace the stacked decorators:\n\nimport functools\n\ndef upper(func):\n    @functools.wraps(func)\n    def wrapper(*a, **kw):\n        return func(*a, **kw).upper()\n    return wrapper\n\ndef exclaim(func):\n    @functools.wraps(func)\n    def wrapper(*a, **kw):\n        return func(*a, **kw) + \"!!!\"\n    return wrapper\n\n@exclaim\n@upper\ndef whisper(text):\n    return text\n\nprint(whisper(\"help\"))", answer: "HELP!!!", hint: "Bottom-up: @upper wraps first (HELP), then @exclaim adds !!!.", refs: [{ label: "Decorators", url: "https://docs.python.org/3/glossary.html#term-decorator" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 Memoize doesn't work with keyword arguments:\n\ndef memoize(func):\n    cache = {}\n    def wrapper(*args, **kwargs):\n        key = args\n        if key not in cache:\n            cache[key] = func(*args, **kwargs)\n        return cache[key]\n    return wrapper\n\n@memoize\ndef add(a, b):\n    print(\"computing\")\n    return a + b\n\nadd(1, 2)      # computing\nadd(1, b=2)    # should use cache but computes again", answer: "def memoize(func):\n    cache = {}\n    def wrapper(*args, **kwargs):\n        key = (args, tuple(sorted(kwargs.items())))\n        if key not in cache:\n            cache[key] = func(*args, **kwargs)\n        return cache[key]\n    return wrapper\n\n@memoize\ndef add(a, b):\n    print(\"computing\")\n    return a + b", hint: "Cache key only uses args, ignoring kwargs. Include kwargs as tuple(sorted(kwargs.items())).", refs: [{ label: "functools.lru_cache", url: "https://docs.python.org/3/library/functools.html#functools.lru_cache" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write rate_limit(max_calls, period) decorator that raises\nRuntimeError if called more than max_calls times within period seconds.\nUse a deque to track timestamps.", answer: "import functools\nimport time\nfrom collections import deque\n\ndef rate_limit(max_calls, period):\n    def decorator(func):\n        calls = deque()\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            now = time.perf_counter()\n            while calls and calls[0] <= now - period:\n                calls.popleft()\n            if len(calls) >= max_calls:\n                raise RuntimeError(f\"Rate limit exceeded\")\n            calls.append(now)\n            return func(*args, **kwargs)\n        return wrapper\n    return decorator", hint: "Use deque for timestamps. Remove expired ones, check length vs max_calls.", refs: [{ label: "collections.deque", url: "https://docs.python.org/3/library/collections.html#collections.deque" }] }
+    ]
+  },
+  "generators": {
+    name: "The Infinite Iterator", icon: "\u221E",
+    color: "from-sky-900 to-blue-950", border: "border-sky-700",
+    intro: "I never end... I yield and yield and yield. Can you tame my laziness, or will you exhaust your memory trying?",
+    rounds: [
+      { type: "output", prompt: "Round 1/3 \u2014 What does this produce?\n\nfrom itertools import takewhile, dropwhile, accumulate\n\ndata = [1, 3, 5, 2, 4, 6]\na = list(takewhile(lambda x: x < 5, data))\nb = list(dropwhile(lambda x: x < 5, data))\nc = list(accumulate(data))\nprint(a)\nprint(b)\nprint(c)", answer: "[1, 3]\n[5, 2, 4, 6]\n[1, 4, 9, 11, 15, 21]", hint: "takewhile stops at first failure. dropwhile starts yielding from first failure. accumulate gives running sums.", refs: [{ label: "itertools.takewhile", url: "https://docs.python.org/3/library/itertools.html#itertools.takewhile" }] },
+      { type: "bugfix", prompt: "Round 2/3 \u2014 This sieve should yield first 5 primes but hangs:\n\ndef integers(start=2):\n    while True:\n        yield start\n        start += 1\n\ndef sieve(nums):\n    while True:\n        prime = next(nums)\n        yield prime\n        nums = filter(lambda x: x % prime != 0, nums)\n\nfrom itertools import islice\nprint(list(islice(sieve(integers()), 5)))", answer: "def integers(start=2):\n    while True:\n        yield start\n        start += 1\n\ndef sieve(nums):\n    while True:\n        prime = next(nums)\n        yield prime\n        nums = (x for x in nums if x % prime != 0)\n\nfrom itertools import islice\nprint(list(islice(sieve(integers()), 5)))", hint: "Lambda captures prime by reference. Use a generator expression instead.", refs: [{ label: "filter", url: "https://docs.python.org/3/library/functions.html#filter" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write batched(iterable, n) yielding tuples of up to n items.\nDo NOT use itertools.batched (3.12+).\n\n# list(batched(range(7), 3))\n# [(0,1,2), (3,4,5), (6,)]", answer: "from itertools import islice\n\ndef batched(iterable, n):\n    it = iter(iterable)\n    while True:\n        batch = tuple(islice(it, n))\n        if not batch:\n            break\n        yield batch", hint: "Use islice(it, n) to take up to n items. Stop when batch is empty.", refs: [{ label: "itertools Recipes", url: "https://docs.python.org/3/library/itertools.html#itertools-recipes" }] }
+    ]
+  },
 };
 
 // ─── MODULES ─────────────────────────────────────────────────────────────────
@@ -305,7 +388,467 @@ def add_item(item, items=None):
         ]
       }
     ]
-  }
+  },
+  {
+    id: "error-handling", title: "Error Handling", icon: "\u{1F6E1}\uFE0F",
+    color: "from-amber-600 to-orange-700",
+    description: "try/except, raising, and custom exceptions.",
+    lessons: [
+      {
+        id: "try-except", title: "Try / Except / Finally",
+        theory: `Python's \`try/except\` lets you intercept runtime errors. Add \`else\` for code that runs only when no exception occurred, and \`finally\` for guaranteed cleanup.
+
+\`\`\`python
+try:
+    result = int(input())
+except ValueError as e:
+    print(f"Bad input: {e}")
+else:
+    print(f"Got {result}")
+finally:
+    print("Done")
+\`\`\`
+
+You can catch multiple exception types in one \`except\` with a tuple, or stack separate \`except\` blocks to handle each differently. The \`else\` block is useful for keeping the \`try\` body minimal — only wrap the line that might throw.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"caught\")\nfinally:\n    print(\"cleanup\")", answer: "caught\ncleanup", hint: "The except block catches the error, then finally always runs regardless.", refs: [{ label: "Errors and Exceptions", url: "https://docs.python.org/3/tutorial/errors.html" }] },
+          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\ntry:\n    x = int(\"42\")\nexcept ValueError:\n    print(\"error\")\nelse:\n    print(f\"ok: {x}\")\nfinally:\n    print(\"done\")", answer: "ok: 42\ndone", hint: "int('42') succeeds, so except is skipped and else runs. finally always runs.", refs: [{ label: "try statement", url: "https://docs.python.org/3/reference/compound_stmts.html#the-try-statement" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: catch both ValueError and TypeError\ntry:\n    result = int(None)\nexcept ValueError, TypeError:\n    print(\"caught\")", answer: "try:\n    result = int(None)\nexcept (ValueError, TypeError):\n    print(\"caught\")", hint: "Multiple exception types must be wrapped in a tuple — parentheses are required.", refs: [{ label: "Handling Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: print the exception message when key is missing\nd = {\"a\": 1}\ntry:\n    print(d[\"b\"])\nexcept KeyError:\n    print(f\"Missing key: {e}\")", answer: "d = {\"a\": 1}\ntry:\n    print(d[\"b\"])\nexcept KeyError as e:\n    print(f\"Missing key: {e}\")", hint: "You need to bind the exception to a variable using 'as' to reference it.", refs: [{ label: "Handling Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a function safe_divide(a, b) that returns a / b.\nIf b is zero, return None instead of raising.\nIf either argument is not a number (TypeError), return None.", answer: "def safe_divide(a, b):\n    try:\n        return a / b\n    except (ZeroDivisionError, TypeError):\n        return None", hint: "Catch both ZeroDivisionError and TypeError in one except clause using a tuple.", refs: [{ label: "Errors and Exceptions", url: "https://docs.python.org/3/tutorial/errors.html" }] }
+        ]
+      },
+      {
+        id: "raising-custom", title: "Raising & Custom Exceptions",
+        theory: `Use \`raise\` to throw exceptions explicitly. Create custom exception classes by subclassing \`Exception\`.
+
+\`\`\`python
+class InsufficientFunds(Exception):
+    def __init__(self, balance, amount):
+        super().__init__(f"Need {amount}, have {balance}")
+        self.balance = balance
+        self.amount = amount
+
+def withdraw(balance, amount):
+    if amount > balance:
+        raise InsufficientFunds(balance, amount)
+    return balance - amount
+\`\`\`
+
+Exception chaining with \`raise ... from ...\` preserves the original cause. Use bare \`raise\` inside an except block to re-raise the current exception.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\ndef check(val):\n    if val < 0:\n        raise ValueError(\"negative\")\n    return val * 2\n\ntry:\n    print(check(3))\n    print(check(-1))\nexcept ValueError as e:\n    print(e)", answer: "6\nnegative", hint: "check(3) prints 6. check(-1) raises ValueError, so the except block prints the message.", refs: [{ label: "Raising Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#raising-exceptions" }] },
+          { type: "output", label: "Predict the Output", prompt: "class AppError(Exception):\n    pass\n\nclass NotFound(AppError):\n    pass\n\ntry:\n    raise NotFound(\"item 42\")\nexcept AppError as e:\n    print(type(e).__name__, e)", answer: "NotFound item 42", hint: "NotFound is a subclass of AppError, so except AppError catches it.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: custom exception with a status_code attribute\nclass HttpError(Exception):\n    def __init__(self, status_code, msg):\n        self.status_code = status_code\n\ntry:\n    raise HttpError(404, \"Not Found\")\nexcept HttpError as e:\n    print(f\"{e.status_code}: {e}\")", answer: "class HttpError(Exception):\n    def __init__(self, status_code, msg):\n        super().__init__(msg)\n        self.status_code = status_code\n\ntry:\n    raise HttpError(404, \"Not Found\")\nexcept HttpError as e:\n    print(f\"{e.status_code}: {e}\")", hint: "Without calling super().__init__(msg), the exception has no message.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Define a custom exception NegativeAge that stores the invalid age.\nWrite set_age(age) that raises NegativeAge if age < 0, otherwise returns age.\nNegativeAge's message should be \"Invalid age: {age}\".", answer: "class NegativeAge(Exception):\n    def __init__(self, age):\n        super().__init__(f\"Invalid age: {age}\")\n        self.age = age\n\ndef set_age(age):\n    if age < 0:\n        raise NegativeAge(age)\n    return age", hint: "Subclass Exception, call super().__init__ with your formatted message, and store the age attribute.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write parse_config(raw) that tries json.loads(raw).\nIf it raises json.JSONDecodeError, catch it and raise a new\nValueError(\"bad config\") chained from the original error.", answer: "import json\n\ndef parse_config(raw):\n    try:\n        return json.loads(raw)\n    except json.JSONDecodeError as e:\n        raise ValueError(\"bad config\") from e", hint: "Use 'raise NewException(...) from original' to chain exceptions.", refs: [{ label: "Exception Chaining", url: "https://docs.python.org/3/tutorial/errors.html#exception-chaining" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "comprehensions-adv", title: "Dict & Set Comprehensions", icon: "\u{1F5DD}\uFE0F",
+    color: "from-cyan-600 to-blue-700",
+    description: "Beyond lists \u2014 dict and set comprehensions, nested comprehensions.",
+    lessons: [
+      {
+        id: "dict-comprehensions", title: "Dict Comprehensions",
+        theory: `Dict comprehensions use \`{key: value for item in iterable}\` syntax. They're ideal for transforming or filtering mappings in one expression.
+
+\`\`\`python
+original = {"a": 1, "b": 2, "c": 3}
+inverted = {v: k for k, v in original.items()}
+
+scores = {"alice": 85, "bob": 42, "carol": 91}
+passed = {k: v for k, v in scores.items() if v >= 60}
+\`\`\`
+
+You can also build dicts from two parallel sequences using \`zip\`, or derive keys/values with arbitrary expressions.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "names = [\"x\", \"y\", \"z\"]\nvals = [10, 20, 30]\nd = {k: v ** 2 for k, v in zip(names, vals)}\nprint(d)", answer: "{'x': 100, 'y': 400, 'z': 900}", hint: "zip pairs the lists element-wise. Each value is squared.", refs: [{ label: "Dict Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }] },
+          { type: "output", label: "Predict the Output", prompt: "src = {\"A\": 1, \"B\": 2, \"C\": 3, \"D\": 4}\nout = {k: v for k, v in src.items() if v % 2 == 0}\nprint(out)", answer: "{'B': 2, 'D': 4}", hint: "The if clause filters to even values only.", refs: [{ label: "Comprehension docs", url: "https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: invert dict so values become keys\nm = {\"host\": \"localhost\", \"port\": \"5432\"}\ninv = [v, k for k, v in m.items()]\nprint(inv)", answer: "m = {\"host\": \"localhost\", \"port\": \"5432\"}\ninv = {v: k for k, v in m.items()}\nprint(inv)", hint: "Dict comprehensions use curly braces and a colon, not square brackets and comma.", refs: [{ label: "Dict Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Given pairs = [(\"a\", 1), (\"b\", 2), (\"c\", 3)],\nuse a dict comprehension to create a dict with keys uppercased\nand values doubled. e.g. {\"A\": 2, \"B\": 4, \"C\": 6}", answer: "pairs = [(\"a\", 1), (\"b\", 2), (\"c\", 3)]\nresult = {k.upper(): v * 2 for k, v in pairs}", hint: "Unpack each tuple in the for clause, apply .upper() to the key and multiply the value.", refs: [{ label: "Dict Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#dictionaries" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: count word lengths\nwords = [\"hello\", \"hi\", \"hey\"]\nlengths = {w, len(w) for w in words}\nprint(lengths)", answer: "words = [\"hello\", \"hi\", \"hey\"]\nlengths = {w: len(w) for w in words}\nprint(lengths)", hint: "Use a colon between key and value. A comma creates a set of tuples.", refs: [{ label: "Comprehension displays", url: "https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries" }] }
+        ]
+      },
+      {
+        id: "set-nested-comprehensions", title: "Set Comprehensions & Nested",
+        theory: `Set comprehensions look like dict comprehensions but without the colon: \`{expr for item in iterable}\`. They automatically deduplicate.
+
+\`\`\`python
+nums = [1, 2, 2, 3, 3, 3]
+unique_squares = {x ** 2 for x in nums}  # {1, 4, 9}
+\`\`\`
+
+Nested comprehensions flatten loops. Read them left-to-right:
+
+\`\`\`python
+matrix = [[1, 2], [3, 4], [5, 6]]
+flat = [val for row in matrix for val in row]
+# [1, 2, 3, 4, 5, 6]
+\`\`\`
+
+Replace outer brackets with parentheses for a generator expression \u2014 lazy and memory-efficient.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "words = [\"Hello\", \"HELLO\", \"hello\", \"World\"]\nlowered = {w.lower() for w in words}\nprint(sorted(lowered))", answer: "['hello', 'world']", hint: "All variations of 'hello' collapse into one in the set.", refs: [{ label: "Sets", url: "https://docs.python.org/3/tutorial/datastructures.html#sets" }] },
+          { type: "output", label: "Predict the Output", prompt: "matrix = [[1, 2, 3], [4, 5, 6]]\nflat = [v for row in matrix for v in row if v % 2 == 1]\nprint(flat)", answer: "[1, 3, 5]", hint: "The nested comprehension flattens first, then the if clause keeps only odd values.", refs: [{ label: "Nested List Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#nested-list-comprehensions" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: flatten [[1,2],[3,4]] into [1,2,3,4]\nmatrix = [[1, 2], [3, 4]]\nflat = [val for val in row for row in matrix]\nprint(flat)", answer: "matrix = [[1, 2], [3, 4]]\nflat = [val for row in matrix for val in row]\nprint(flat)", hint: "The outer loop comes first. Read it like: for row in matrix: for val in row.", refs: [{ label: "Nested List Comprehensions", url: "https://docs.python.org/3/tutorial/datastructures.html#nested-list-comprehensions" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Given data = {\"a\": [1, 2], \"b\": [3, 2], \"c\": [1, 4]},\nuse a set comprehension to collect all unique values.\nExpected: {1, 2, 3, 4}", answer: "data = {\"a\": [1, 2], \"b\": [3, 2], \"c\": [1, 4]}\nresult = {v for lst in data.values() for v in lst}", hint: "Iterate over data.values() to get the lists, then over each list.", refs: [{ label: "Sets", url: "https://docs.python.org/3/tutorial/datastructures.html#sets" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Use a generator expression with sum() to compute the total of\nall even numbers from 1 to 100 inclusive. Store in variable total.", answer: "total = sum(x for x in range(1, 101) if x % 2 == 0)", hint: "sum() accepts a generator expression directly.", refs: [{ label: "Generator Expressions", url: "https://docs.python.org/3/reference/expressions.html#generator-expressions" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "fstrings", title: "f-strings & Formatting", icon: "\u{1F4DD}",
+    color: "from-pink-600 to-rose-700",
+    description: "Modern string formatting, alignment, and debug tricks.",
+    lessons: [
+      {
+        id: "fstring-basics", title: "f-string Basics & Expressions",
+        theory: `f-strings (Python 3.6+) embed expressions directly in string literals with \`f"...{expr}..."\`. Any valid expression works inside the braces.
+
+\`\`\`python
+name = "Ada"
+scores = [90, 85, 92]
+print(f"{name.lower()} avg: {sum(scores)/len(scores):.1f}")
+# ada avg: 89.0
+\`\`\`
+
+Since Python 3.12, you can freely nest quotes inside f-string braces.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "x, y = 3, 4\nprint(f\"hyp={(x**2 + y**2) ** 0.5}\")", answer: "hyp=5.0", hint: "3**2 + 4**2 = 25, and 25**0.5 = 5.0.", refs: [{ label: "Formatted string literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] },
+          { type: "output", label: "Predict the Output", prompt: "items = [\"a\", \"b\", \"c\"]\nprint(f\"count={len(items)}, last={items[-1].upper()}\")", answer: "count=3, last=C", hint: "len(items) is 3, items[-1] is 'c', and .upper() makes it 'C'.", refs: [{ label: "Formatted string literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: print \"status: ACTIVE\"\nstatus = \"active\"\nprint(f\"status: {status.upper}\")", answer: "status = \"active\"\nprint(f\"status: {status.upper()}\")", hint: "upper is a method \u2014 you need parentheses to call it.", refs: [{ label: "String Methods", url: "https://docs.python.org/3/library/stdtypes.html#string-methods" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: print \"She said 'hello'\"\nword = \"hello\"\nmsg = f'She said \\'{word}\\''\nprint(msg)", answer: "word = \"hello\"\nmsg = f\"She said '{word}'\"\nprint(msg)", hint: "Use double quotes on the outside to avoid conflicting with inner single quotes.", refs: [{ label: "Formatted string literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Given nums = [10, 20, 30], use a single f-string to produce:\n\"items: 10, 20, 30 (total: 60)\"\nStore it in variable result.", answer: "nums = [10, 20, 30]\nresult = f\"items: {', '.join(str(n) for n in nums)} (total: {sum(nums)})\"", hint: "Use ', '.join() with a generator inside the f-string braces.", refs: [{ label: "str.join", url: "https://docs.python.org/3/library/stdtypes.html#str.join" }] }
+        ]
+      },
+      {
+        id: "format-specs-debug", title: "Format Specs & Debug",
+        theory: `After the expression, add \`:\` followed by a format spec: \`f"{value:spec}"\`.
+
+\`\`\`python
+pi = 3.14159
+print(f"{pi:.2f}")      # 3.14
+print(f"{1000000:,}")    # 1,000,000
+print(f"{'hi':>10}")     #         hi
+print(f"{'hi':-^10}")    # ----hi----
+\`\`\`
+
+The \`=\` debug specifier (Python 3.8+) prints both expression and value:
+
+\`\`\`python
+x = 42
+print(f"{x = }")   # x = 42
+\`\`\``,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "val = 3.14159\nprint(f\"{val:.3f}\")\nprint(f\"{1234567:,}\")", answer: "3.142\n1,234,567", hint: ":.3f rounds to 3 decimal places. :, adds thousand separators.", refs: [{ label: "Format Specification Mini-Language", url: "https://docs.python.org/3/library/string.html#format-specification-mini-language" }] },
+          { type: "output", label: "Predict the Output", prompt: "word = \"py\"\nprint(f\"{word:*>6}\")\nprint(f\"{word:*^6}\")", answer: "****py\n**py**", hint: "> right-aligns, ^ centers. Fill char is *, width is 6.", refs: [{ label: "Format Specification Mini-Language", url: "https://docs.python.org/3/library/string.html#format-specification-mini-language" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: print \"price = 9.99\" using = debug specifier\nprice = 9.99\nprint(f\"{price:=}\")", answer: "price = 9.99\nprint(f\"{price = }\")", hint: "The = debug specifier goes after the expression, not inside the format spec.", refs: [{ label: "Formatted string literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write format_table(rows) where rows is a list of (name, score) tuples.\nReturn a string with one line per row: name left-aligned in 12 chars,\npipe separator, score right-aligned in 6 chars with 1 decimal.\nExample row: \"Alice       |  85.0\"", answer: "def format_table(rows):\n    lines = [f\"{name:<12}|{score:>6.1f}\" for name, score in rows]\n    return \"\\n\".join(lines)", hint: "Use :<12 for left-align and :>6.1f for right-align with 1 decimal.", refs: [{ label: "Format Specification Mini-Language", url: "https://docs.python.org/3/library/string.html#format-specification-mini-language" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write debug_vars(**kwargs) that returns a string with each\nkey-value pair as \"key = value\", separated by \", \".\ne.g. debug_vars(x=1, y=2) -> \"x = 1, y = 2\"", answer: "def debug_vars(**kwargs):\n    parts = [f\"{k} = {v}\" for k, v in kwargs.items()]\n    return \", \".join(parts)", hint: "Iterate over kwargs.items() and format each pair.", refs: [{ label: "Formatted string literals", url: "https://docs.python.org/3/reference/lexical_analysis.html#f-strings" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "context-managers", title: "Context Managers", icon: "\u{1F6AA}",
+    color: "from-teal-600 to-emerald-700",
+    description: "with statements, file handling, and writing your own context managers.",
+    lessons: [
+      {
+        id: "with-statement", title: "The with Statement",
+        theory: `The \`with\` statement guarantees cleanup even if an exception occurs. Most common use is file I/O:
+
+\`\`\`python
+with open("data.csv") as f:
+    contents = f.read()
+# f is automatically closed here
+\`\`\`
+
+You can manage multiple resources in a single \`with\`:
+
+\`\`\`python
+with open("in.txt") as src, open("out.txt", "w") as dst:
+    dst.write(src.read())
+\`\`\`
+
+The \`with\` statement calls \`__enter__\` on entry and \`__exit__\` on exit.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "class Gate:\n    def __enter__(self):\n        print(\"enter\")\n        return self\n    def __exit__(self, *args):\n        print(\"exit\")\n\nwith Gate() as g:\n    print(\"inside\")", answer: "enter\ninside\nexit", hint: "__enter__ runs first, then the block body, then __exit__.", refs: [{ label: "With Statement Context Managers", url: "https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers" }] },
+          { type: "output", label: "Predict the Output", prompt: "class Suppress:\n    def __enter__(self):\n        return self\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        if exc_type is ValueError:\n            print(\"caught\")\n            return True\n        return False\n\nwith Suppress():\n    raise ValueError(\"oops\")\nprint(\"done\")", answer: "caught\ndone", hint: "Returning True from __exit__ suppresses the exception.", refs: [{ label: "With Statement Context Managers", url: "https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# File ends up empty because data is never flushed\nf = open(\"log.txt\", \"w\")\nf.write(\"line 1\\n\")\nf.write(\"line 2\\n\")\n# program crashes here", answer: "with open(\"log.txt\", \"w\") as f:\n    f.write(\"line 1\\n\")\n    f.write(\"line 2\\n\")", hint: "Wrap file operations in a with statement so close() is guaranteed.", refs: [{ label: "Reading and Writing Files", url: "https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Refactor nested with into a single statement\nwith open(\"a.txt\") as src:\n    with open(\"b.txt\", \"w\") as dst:\n        for line in src:\n            dst.write(line)", answer: "with open(\"a.txt\") as src, open(\"b.txt\", \"w\") as dst:\n    for line in src:\n        dst.write(line)", hint: "Python allows comma-separated context managers in one with statement.", refs: [{ label: "The with statement", url: "https://docs.python.org/3/reference/compound_stmts.html#the-with-statement" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write code that reads \"numbers.txt\" (one integer per line),\ncomputes the sum, and writes the result to \"total.txt\".\nUse with statements for both files.", answer: "with open(\"numbers.txt\") as f:\n    total = sum(int(line) for line in f)\n\nwith open(\"total.txt\", \"w\") as f:\n    f.write(str(total))", hint: "Iterate over a file object line by line. Use int() and sum().", refs: [{ label: "open() built-in", url: "https://docs.python.org/3/library/functions.html#open" }] }
+        ]
+      },
+      {
+        id: "custom-context-managers", title: "Custom Context Managers",
+        theory: `Any object with \`__enter__\` and \`__exit__\` is a context manager. For simpler cases, \`contextlib.contextmanager\` lets you write a generator-based one:
+
+\`\`\`python
+from contextlib import contextmanager
+
+@contextmanager
+def tag(name):
+    print(f"<{name}>")
+    yield
+    print(f"</{name}>")
+\`\`\`
+
+Everything before \`yield\` is \`__enter__\`, everything after is \`__exit__\`. The yielded value becomes the \`as\` target.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "from contextlib import contextmanager\n\n@contextmanager\ndef section(title):\n    print(f\"--- {title} ---\")\n    yield title.upper()\n    print(\"--- end ---\")\n\nwith section(\"intro\") as s:\n    print(s)", answer: "--- intro ---\nINTRO\n--- end ---", hint: "The yielded value is bound to s. Code before yield runs on entry, after on exit.", refs: [{ label: "contextlib.contextmanager", url: "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Timer always shows 0 seconds\nimport time\nfrom contextlib import contextmanager\n\n@contextmanager\ndef timed():\n    start = time.perf_counter()\n    elapsed = time.perf_counter() - start\n    yield\n    print(f\"Elapsed: {elapsed:.4f}s\")", answer: "import time\nfrom contextlib import contextmanager\n\n@contextmanager\ndef timed():\n    start = time.perf_counter()\n    yield\n    elapsed = time.perf_counter() - start\n    print(f\"Elapsed: {elapsed:.4f}s\")", hint: "elapsed is computed BEFORE yield. Move it to AFTER yield.", refs: [{ label: "contextlib.contextmanager", url: "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Timer class: elapsed is always near 0\nimport time\n\nclass Timer:\n    def __enter__(self):\n        self.elapsed = time.perf_counter()\n        return self\n    def __exit__(self, *args):\n        self.elapsed = time.perf_counter()\n        return False", answer: "import time\n\nclass Timer:\n    def __enter__(self):\n        self.start = time.perf_counter()\n        return self\n    def __exit__(self, *args):\n        self.elapsed = time.perf_counter() - self.start\n        return False", hint: "Store start time in __enter__ and compute the difference in __exit__.", refs: [{ label: "time.perf_counter", url: "https://docs.python.org/3/library/time.html#time.perf_counter" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Using @contextmanager, write tempdir() that creates a\ntemporary directory on entry (yield its path), and deletes it\non exit. Use tempfile.mkdtemp and shutil.rmtree.", answer: "from contextlib import contextmanager\nimport tempfile, shutil\n\n@contextmanager\ndef tempdir():\n    path = tempfile.mkdtemp()\n    try:\n        yield path\n    finally:\n        shutil.rmtree(path)", hint: "Use try/finally around yield so cleanup happens even on exception.", refs: [{ label: "contextlib.contextmanager", url: "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a class-based context manager DBConnection that prints\n\"connecting\" on enter, returns {\"status\": \"open\"}, prints\n\"disconnecting\" on exit, and suppresses RuntimeError only.", answer: "class DBConnection:\n    def __enter__(self):\n        print(\"connecting\")\n        return {\"status\": \"open\"}\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        print(\"disconnecting\")\n        return exc_type is RuntimeError", hint: "__exit__ returns True only for RuntimeError to suppress it.", refs: [{ label: "With Statement Context Managers", url: "https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "lambda-functional", title: "Lambda & Functional", icon: "\u03BB",
+    color: "from-violet-600 to-purple-700",
+    description: "Lambda expressions, map, filter, sorted with key functions.",
+    lessons: [
+      {
+        id: "lambda-expressions", title: "Lambda Expressions",
+        theory: `A \`lambda\` is an anonymous, single-expression function:
+
+\`\`\`python
+square = lambda x: x ** 2
+\`\`\`
+
+Lambdas shine as throwaway \`key\` functions:
+
+\`\`\`python
+pairs = [(1, "b"), (3, "a"), (2, "c")]
+sorted(pairs, key=lambda p: p[1])
+
+records = [{"name": "Ada", "score": 90}, {"name": "Bob", "score": 75}]
+best = max(records, key=lambda r: r["score"])
+\`\`\`
+
+Lambdas cannot contain statements, only a single expression.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "words = [\"banana\", \"pie\", \"kiwi\", \"strawberry\"]\nprint(sorted(words, key=lambda w: len(w)))", answer: "['pie', 'kiwi', 'banana', 'strawberry']", hint: "sorted uses len() as the key. len('pie')=3, len('kiwi')=4, etc.", refs: [{ label: "Sorting HOW TO", url: "https://docs.python.org/3/howto/sorting.html" }] },
+          { type: "output", label: "Predict the Output", prompt: "ops = [lambda x, n=n: x + n for n in range(3)]\nprint([fn(10) for fn in ops])", answer: "[10, 11, 12]", hint: "The default argument n=n captures the current value at each iteration.", refs: [{ label: "Lambda expressions", url: "https://docs.python.org/3/reference/expressions.html#lambda" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should sort most recent first, but sorts oldest first\nevents = [\n    {\"name\": \"launch\", \"date\": \"2025-06-01\"},\n    {\"name\": \"beta\", \"date\": \"2025-01-15\"},\n    {\"name\": \"GA\", \"date\": \"2025-09-30\"},\n]\nresult = sorted(events, key=lambda e: e[\"date\"])", answer: "result = sorted(events, key=lambda e: e[\"date\"], reverse=True)", hint: "Add reverse=True to sort in descending order.", refs: [{ label: "sorted() built-in", url: "https://docs.python.org/3/library/functions.html#sorted" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# SyntaxError on this lambda\nhyp = lambda a, b:\n    (a**2 + b**2) ** 0.5", answer: "hyp = lambda a, b: (a**2 + b**2) ** 0.5", hint: "Lambdas must be a single expression on one line.", refs: [{ label: "Lambda expressions", url: "https://docs.python.org/3/reference/expressions.html#lambda" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Given students = [(\"Ada\", 88), (\"Bob\", 95), (\"Cat\", 72)],\nuse max with a lambda to find the tuple with highest score (store in top),\nand sorted with a lambda to sort by score descending (store in ranked).", answer: "students = [(\"Ada\", 88), (\"Bob\", 95), (\"Cat\", 72)]\ntop = max(students, key=lambda s: s[1])\nranked = sorted(students, key=lambda s: s[1], reverse=True)", hint: "Both max and sorted accept a key argument. Use index [1] for the score.", refs: [{ label: "max() built-in", url: "https://docs.python.org/3/library/functions.html#max" }] }
+        ]
+      },
+      {
+        id: "map-filter-functools", title: "map, filter & functools",
+        theory: `\`map(func, iterable)\` applies a function to every item lazily. \`filter(func, iterable)\` keeps items where func returns truthy.
+
+\`\`\`python
+list(map(str.upper, ["hello", "world"]))  # ['HELLO', 'WORLD']
+list(filter(lambda x: x > 0, [-1, 2, -3, 4]))  # [2, 4]
+\`\`\`
+
+\`functools.reduce\` collapses to a single value. \`functools.partial\` freezes some arguments:
+
+\`\`\`python
+from functools import reduce, partial
+reduce(lambda acc, x: acc * x, [1, 2, 3, 4])  # 24
+int_from_bin = partial(int, base=2)
+int_from_bin("1010")  # 10
+\`\`\``,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "from functools import reduce\nnums = [1, 2, 3, 4, 5]\nresult = reduce(lambda a, b: a if a > b else b, nums)\nprint(result)", answer: "5", hint: "This reduce finds the maximum by comparing accumulator with each element.", refs: [{ label: "functools.reduce", url: "https://docs.python.org/3/library/functools.html#functools.reduce" }] },
+          { type: "output", label: "Predict the Output", prompt: "result = list(map(lambda x: x ** 2, filter(lambda x: x % 2 == 0, range(6))))\nprint(result)", answer: "[0, 4, 16]", hint: "filter keeps even numbers [0, 2, 4]. map squares each: [0, 4, 16].", refs: [{ label: "map() built-in", url: "https://docs.python.org/3/library/functions.html#map" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should print [2, 4, 6] but prints a map object\ndoubled = map(lambda x: x * 2, [1, 2, 3])\nprint(doubled)", answer: "doubled = map(lambda x: x * 2, [1, 2, 3])\nprint(list(doubled))", hint: "map() returns a lazy iterator. Wrap in list() to materialize.", refs: [{ label: "map() built-in", url: "https://docs.python.org/3/library/functions.html#map" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Use functools.partial to create csv_split that splits on commas.\nThen use map to apply it to lines = [\"a,b,c\", \"d,e,f\"].\nStore the result as a list in rows.", answer: "from functools import partial\n\ncsv_split = partial(str.split, sep=\",\")\nlines = [\"a,b,c\", \"d,e,f\"]\nrows = list(map(csv_split, lines))", hint: "partial(str.split, sep=',') creates a callable that splits on commas.", refs: [{ label: "functools.partial", url: "https://docs.python.org/3/library/functools.html#functools.partial" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Given data = [\"3\", \"7\", \"\", \"12\", \"0\", \"\"],\nuse filter to remove empty strings, map to convert to ints,\nthen functools.reduce to compute the sum. Store in total.", answer: "from functools import reduce\n\ndata = [\"3\", \"7\", \"\", \"12\", \"0\", \"\"]\ntotal = reduce(lambda a, b: a + b, map(int, filter(None, data)))", hint: "filter(None, iterable) removes falsy values (empty strings). Chain map and reduce.", refs: [{ label: "functools.reduce", url: "https://docs.python.org/3/library/functools.html#functools.reduce" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "dataclasses", title: "Dataclasses", icon: "\u{1F4E6}",
+    color: "from-lime-600 to-green-700",
+    description: "Structured data without boilerplate \u2014 frozen, defaults, and post_init.",
+    lessons: [
+      {
+        id: "dataclass-basics", title: "Dataclass Basics",
+        theory: `The \`@dataclass\` decorator auto-generates \`__init__\`, \`__repr__\`, and \`__eq__\`:
+
+\`\`\`python
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+\`\`\`
+
+Fields with defaults must come after fields without:
+
+\`\`\`python
+@dataclass
+class Config:
+    host: str
+    port: int = 8080
+\`\`\``,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "from dataclasses import dataclass\n\n@dataclass\nclass Vec:\n    x: int\n    y: int\n\na = Vec(1, 2)\nb = Vec(1, 2)\nprint(a == b)\nprint(a is b)", answer: "True\nFalse", hint: "@dataclass generates __eq__ that compares field values. Equal but not the same object.", refs: [{ label: "dataclasses module", url: "https://docs.python.org/3/library/dataclasses.html" }] },
+          { type: "output", label: "Predict the Output", prompt: "from dataclasses import dataclass\n\n@dataclass\nclass Item:\n    name: str\n    price: float = 0.0\n\nprint(Item(\"widget\"))", answer: "Item(name='widget', price=0.0)", hint: "Auto-generated __repr__ shows all fields with their values.", refs: [{ label: "dataclasses module", url: "https://docs.python.org/3/library/dataclasses.html" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Raises TypeError \u2014 fix the field ordering\nfrom dataclasses import dataclass\n\n@dataclass\nclass User:\n    role: str = \"viewer\"\n    name: str\n    email: str", answer: "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    name: str\n    email: str\n    role: str = \"viewer\"", hint: "Fields without defaults must come before fields with defaults.", refs: [{ label: "dataclasses module", url: "https://docs.python.org/3/library/dataclasses.html" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should NOT generate __eq__ (want identity comparison)\nfrom dataclasses import dataclass\n\n@dataclass\nclass Connection:\n    host: str\n    port: int", answer: "from dataclasses import dataclass\n\n@dataclass(eq=False)\nclass Connection:\n    host: str\n    port: int", hint: "Pass eq=False to @dataclass to skip __eq__ generation.", refs: [{ label: "@dataclass parameters", url: "https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Create a dataclass Experiment with: name (str), n_samples (int),\nlearning_rate (float, default 0.001), tags (list[str], default empty list).\nUse field(default_factory=list) for the mutable default.", answer: "from dataclasses import dataclass, field\n\n@dataclass\nclass Experiment:\n    name: str\n    n_samples: int\n    learning_rate: float = 0.001\n    tags: list[str] = field(default_factory=list)", hint: "Mutable defaults must use field(default_factory=list).", refs: [{ label: "dataclasses.field", url: "https://docs.python.org/3/library/dataclasses.html#dataclasses.field" }] }
+        ]
+      },
+      {
+        id: "advanced-dataclasses", title: "Advanced Dataclasses",
+        theory: `\`frozen=True\` makes instances immutable. \`__post_init__\` runs after \`__init__\` for validation or derived fields:
+
+\`\`\`python
+@dataclass
+class Rect:
+    w: float
+    h: float
+    area: float = field(init=False)
+
+    def __post_init__(self):
+        self.area = self.w * self.h
+\`\`\`
+
+\`order=True\` generates comparison methods. Use \`field(repr=False)\` to hide and \`field(compare=False)\` to exclude from equality.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "from dataclasses import dataclass, field\n\n@dataclass(order=True)\nclass Version:\n    major: int\n    minor: int\n    patch: int\n\nvs = [Version(2, 0, 1), Version(1, 9, 0), Version(2, 0, 0)]\nprint(sorted(vs)[-1])", answer: "Version(major=2, minor=0, patch=1)", hint: "order=True compares tuples of fields. (2,0,1) > (2,0,0) > (1,9,0).", refs: [{ label: "@dataclass parameters", url: "https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass" }] },
+          { type: "output", label: "Predict the Output", prompt: "from dataclasses import dataclass, field\n\n@dataclass\nclass Metric:\n    name: str\n    value: float\n    _history: list = field(default_factory=list, repr=False, compare=False)\n\na = Metric(\"loss\", 0.5)\nb = Metric(\"loss\", 0.5)\na._history.append(0.5)\nprint(a == b)\nprint(a)", answer: "True\nMetric(name='loss', value=0.5)", hint: "_history is excluded from both comparison and repr.", refs: [{ label: "dataclasses.field", url: "https://docs.python.org/3/library/dataclasses.html#dataclasses.field" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Frozen dataclass: __post_init__ raises FrozenInstanceError\nfrom dataclasses import dataclass, field\n\n@dataclass(frozen=True)\nclass Patient:\n    weight_kg: float\n    height_m: float\n    bmi: float = field(init=False)\n\n    def __post_init__(self):\n        self.bmi = self.weight_kg / (self.height_m ** 2)", answer: "from dataclasses import dataclass, field\n\n@dataclass(frozen=True)\nclass Patient:\n    weight_kg: float\n    height_m: float\n    bmi: float = field(init=False)\n\n    def __post_init__(self):\n        object.__setattr__(self, \"bmi\", self.weight_kg / (self.height_m ** 2))", hint: "Frozen dataclasses block assignment. Use object.__setattr__ in __post_init__.", refs: [{ label: "Frozen instances", url: "https://docs.python.org/3/library/dataclasses.html#frozen-instances" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Create a frozen dataclass RGB with r, g, b (all int).\nAdd __post_init__ that raises ValueError if any channel is not in 0-255.", answer: "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass RGB:\n    r: int\n    g: int\n    b: int\n\n    def __post_init__(self):\n        for ch in (self.r, self.g, self.b):\n            if not (0 <= ch <= 255):\n                raise ValueError(f\"Channel value {ch} out of range 0-255\")", hint: "In frozen dataclass, __post_init__ can still read fields for validation.", refs: [{ label: "dataclasses \u2014 post-init", url: "https://docs.python.org/3/library/dataclasses.html#post-init-processing" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Create dataclass TimeSeries with: name (str), values (list[float],\ndefault_factory=list), mean (float, init=False).\nCompute mean in __post_init__; use 0.0 if values is empty.", answer: "from dataclasses import dataclass, field\n\n@dataclass\nclass TimeSeries:\n    name: str\n    values: list[float] = field(default_factory=list)\n    mean: float = field(init=False)\n\n    def __post_init__(self):\n        self.mean = sum(self.values) / len(self.values) if self.values else 0.0", hint: "Use field(init=False) so mean isn't a constructor param.", refs: [{ label: "dataclasses \u2014 post-init", url: "https://docs.python.org/3/library/dataclasses.html#post-init-processing" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "decorators", title: "Decorators", icon: "\u{1F3AD}",
+    color: "from-fuchsia-600 to-pink-700",
+    description: "Function wrappers, @syntax, and real-world patterns like timing and caching.",
+    lessons: [
+      {
+        id: "decorator-basics", title: "Decorator Basics",
+        theory: `Decorators are syntactic sugar for wrapping functions. Since functions are first-class objects, you can pass them as arguments and return them.
+
+\`\`\`python
+def shout(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        return result.upper()
+    return wrapper
+
+@shout
+def greet(name):
+    return f"hello, {name}"
+
+# @shout is equivalent to: greet = shout(greet)
+print(greet("world"))  # HELLO, WORLD
+\`\`\``,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "def trace(func):\n    def wrapper(*args):\n        print(f\"calling {func.__name__}\")\n        return func(*args)\n    return wrapper\n\n@trace\ndef add(a, b):\n    return a + b\n\nresult = add(3, 4)\nprint(result)", answer: "calling add\n7", hint: "The wrapper prints the function name before calling the original.", refs: [{ label: "Decorators", url: "https://docs.python.org/3/glossary.html#term-decorator" }] },
+          { type: "output", label: "Predict the Output", prompt: "def double_result(func):\n    def wrapper(*args):\n        return func(*args) * 2\n    return wrapper\n\n@double_result\ndef get_value():\n    return 5\n\nprint(get_value())\nprint(get_value.__name__)", answer: "10\nwrapper", hint: "Without functools.wraps, __name__ reflects the inner function.", refs: [{ label: "functools.wraps", url: "https://docs.python.org/3/library/functools.html#functools.wraps" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Decorator breaks the return value\ndef logger(func):\n    def wrapper(*args, **kwargs):\n        print(f\"Called {func.__name__}\")\n        func(*args, **kwargs)\n    return wrapper\n\n@logger\ndef square(x):\n    return x ** 2\n\nprint(square(5))  # Expected: 25, Got: None", answer: "def logger(func):\n    def wrapper(*args, **kwargs):\n        print(f\"Called {func.__name__}\")\n        return func(*args, **kwargs)\n    return wrapper\n\n@logger\ndef square(x):\n    return x ** 2\n\nprint(square(5))", hint: "The wrapper calls func() but doesn't return its result.", refs: [{ label: "Defining Functions", url: "https://docs.python.org/3/tutorial/controlflow.html#defining-functions" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Decorator should validate positive args\ndef positive_only(func):\n    def wrapper(*args):\n        for a in args:\n            if a < 0:\n                raise ValueError(\"Negative\")\n        return func(args)\n    return wrapper\n\n@positive_only\ndef multiply(a, b):\n    return a * b\n\nprint(multiply(3, 4))  # Expected: 12", answer: "def positive_only(func):\n    def wrapper(*args):\n        for a in args:\n            if a < 0:\n                raise ValueError(\"Negative\")\n        return func(*args)\n    return wrapper\n\n@positive_only\ndef multiply(a, b):\n    return a * b\n\nprint(multiply(3, 4))", hint: "func(args) passes a single tuple. Use func(*args) to unpack.", refs: [{ label: "Unpacking Argument Lists", url: "https://docs.python.org/3/tutorial/controlflow.html#unpacking-argument-lists" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a decorator count_calls that tracks how many times a function\nis called. Store the count as wrapper.call_count.\n\n# @count_calls\n# def say_hi(): print(\"hi\")\n# say_hi(); say_hi(); say_hi()\n# print(say_hi.call_count)  # 3", answer: "def count_calls(func):\n    def wrapper(*args, **kwargs):\n        wrapper.call_count += 1\n        return func(*args, **kwargs)\n    wrapper.call_count = 0\n    return wrapper", hint: "Functions are objects \u2014 you can set attributes on them.", refs: [{ label: "Function Objects", url: "https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy" }] }
+        ]
+      },
+      {
+        id: "practical-decorators", title: "Practical Decorators",
+        theory: `Real-world decorators use \`functools.wraps\` to preserve metadata and can accept arguments via nested closures:
+
+\`\`\`python
+import functools
+
+def retry(max_attempts=3):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception:
+                    if attempt == max_attempts - 1:
+                        raise
+        return wrapper
+    return decorator
+\`\`\`
+
+Stacking decorators applies bottom-up: \`@A @B def f\` means \`f = A(B(f))\`.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "import functools\n\ndef tag(name):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            return f\"<{name}>{func(*args, **kwargs)}</{name}>\"\n        return wrapper\n    return decorator\n\n@tag(\"b\")\n@tag(\"i\")\ndef greet(name):\n    return f\"Hi, {name}\"\n\nprint(greet(\"Ada\"))\nprint(greet.__name__)", answer: "<b><i>Hi, Ada</i></b>\ngreet", hint: "Bottom-up: @tag('i') wraps first, then @tag('b'). functools.wraps preserves the name.", refs: [{ label: "functools.wraps", url: "https://docs.python.org/3/library/functools.html#functools.wraps" }] },
+          { type: "output", label: "Predict the Output", prompt: "from functools import lru_cache\n\ncall_count = 0\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    global call_count\n    call_count += 1\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n\nprint(fib(6))\nprint(call_count)", answer: "8\n7", hint: "lru_cache memoizes results. Each n from 0 to 6 is computed exactly once: 7 calls.", refs: [{ label: "functools.lru_cache", url: "https://docs.python.org/3/library/functools.html#functools.lru_cache" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# @log should work without arguments, but process gets passed as message\nimport functools\n\ndef log(message):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            print(f\"{message}: calling {func.__name__}\")\n            return func(*args, **kwargs)\n        return wrapper\n    return decorator\n\n@log\ndef process():\n    return \"done\"\n\nprint(process())", answer: "import functools\n\ndef log(message=\"DEBUG\"):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            print(f\"{message}: calling {func.__name__}\")\n            return func(*args, **kwargs)\n        return wrapper\n    return decorator\n\n@log()\ndef process():\n    return \"done\"\n\nprint(process())", hint: "Without parens, @log passes process as message. Use @log() with a default.", refs: [{ label: "Decorators", url: "https://docs.python.org/3/glossary.html#term-decorator" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a decorator timer that prints how long a function takes:\n\"func_name took 0.1234s\". Use time.perf_counter and functools.wraps.", answer: "import time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} took {elapsed:.4f}s\")\n        return result\n    return wrapper", hint: "Capture perf_counter before and after. Format with :.4f. Don't forget to return result.", refs: [{ label: "time.perf_counter", url: "https://docs.python.org/3/library/time.html#time.perf_counter" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a decorator factory validate_types that checks argument types.\n\n# @validate_types(int, int)\n# def add(a, b): return a + b\n# add(1, 2)    # OK\n# add(1, \"2\")  # raises TypeError", answer: "import functools\n\ndef validate_types(*types):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for arg, expected in zip(args, types):\n                if not isinstance(arg, expected):\n                    raise TypeError(f\"Expected {expected.__name__}, got {type(arg).__name__}\")\n            return func(*args, **kwargs)\n        return wrapper\n    return decorator", hint: "Three nesting levels: factory takes types, decorator takes func, wrapper takes args.", refs: [{ label: "isinstance", url: "https://docs.python.org/3/library/functions.html#isinstance" }] }
+        ]
+      }
+    ]
+  },
+  {
+    id: "generators", title: "Generators & Itertools", icon: "\u267E\uFE0F",
+    color: "from-sky-600 to-blue-700",
+    description: "Lazy evaluation, yield, and itertools for memory-efficient data processing.",
+    lessons: [
+      {
+        id: "generator-functions", title: "Generator Functions & Expressions",
+        theory: `A generator function uses \`yield\` instead of \`return\`, producing values lazily:
+
+\`\`\`python
+def countdown(n):
+    while n > 0:
+        yield n
+        n -= 1
+
+gen = countdown(3)
+print(next(gen))  # 3
+print(next(gen))  # 2
+\`\`\`
+
+Generator expressions are like list comps but lazy:
+
+\`\`\`python
+squares = (x**2 for x in range(1_000_000))  # no memory spike
+\`\`\`
+
+Generators are single-use iterators. You can \`send()\` values back in for coroutine-like patterns.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "def pairs(n):\n    for i in range(n):\n        yield i, i ** 2\n\ngen = pairs(4)\nnext(gen)\na, b = next(gen)\nprint(f\"{a}:{b}\")\nprint(list(gen))", answer: "1:1\n[(2, 4), (3, 9)]", hint: "First next() yields (0,0) and discards it. Second yields (1,1). list() consumes the rest.", refs: [{ label: "Generator Expressions", url: "https://docs.python.org/3/reference/expressions.html#generator-expressions" }] },
+          { type: "output", label: "Predict the Output", prompt: "def accumulator():\n    total = 0\n    while True:\n        value = yield total\n        if value is None:\n            break\n        total += value\n\ngen = accumulator()\nprint(next(gen))\nprint(gen.send(10))\nprint(gen.send(20))", answer: "0\n10\n30", hint: "next() starts the generator, yielding 0. send(10) resumes, total becomes 10. send(20) makes it 30.", refs: [{ label: "generator.send", url: "https://docs.python.org/3/reference/expressions.html#generator.send" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should produce chunks but uses wrong slice syntax\ndef chunks(lst, size):\n    for i in range(0, len(lst), size):\n        yield lst[i, i + size]\n\nprint(list(chunks(list(range(10)), 3)))", answer: "def chunks(lst, size):\n    for i in range(0, len(lst), size):\n        yield lst[i:i + size]\n\nprint(list(chunks(list(range(10)), 3)))", hint: "lst[i, i + size] is a tuple index. Use colon for slicing: lst[i:i + size].", refs: [{ label: "Sequence Slicing", url: "https://docs.python.org/3/library/stdtypes.html#common-sequence-operations" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should yield unique elements but logic is inverted\ndef unique(iterable):\n    seen = set()\n    for item in iterable:\n        if item in seen:\n            yield item\n        seen.add(item)\n\nprint(list(unique([3, 1, 4, 1, 5, 3, 6])))", answer: "def unique(iterable):\n    seen = set()\n    for item in iterable:\n        if item not in seen:\n            yield item\n        seen.add(item)\n\nprint(list(unique([3, 1, 4, 1, 5, 3, 6])))", hint: "Yield items NOT in seen, not items that are in seen.", refs: [{ label: "Sets", url: "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a generator fibonacci() that yields the infinite Fibonacci\nsequence (0, 1, 1, 2, 3, 5, 8, ...). Then create a generator\nexpression even_fibs that yields only even Fibonacci numbers.", answer: "def fibonacci():\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b\n\neven_fibs = (x for x in fibonacci() if x % 2 == 0)", hint: "Use a, b = b, a + b for the classic fib pattern. Filter with if x % 2 == 0.", refs: [{ label: "Yield Expressions", url: "https://docs.python.org/3/reference/expressions.html#yield-expressions" }] }
+        ]
+      },
+      {
+        id: "itertools-essentials", title: "itertools Essentials",
+        theory: `The \`itertools\` module provides memory-efficient building blocks:
+
+\`\`\`python
+from itertools import chain, islice, groupby, product
+
+list(chain([1, 2], [3, 4]))       # [1, 2, 3, 4]
+list(islice(range(100), 5, 10))   # [5, 6, 7, 8, 9]
+list(product("AB", [1, 2]))       # [('A',1),('A',2),('B',1),('B',2)]
+\`\`\`
+
+\`groupby\` only groups **consecutive** elements \u2014 sort first! \`combinations\`/\`permutations\` are great for search problems.`,
+        exercises: [
+          { type: "output", label: "Predict the Output", prompt: "from itertools import chain, islice\n\na = chain(range(3), range(10, 13))\nb = islice(a, 2, 5)\nprint(list(b))", answer: "[2, 10, 11]", hint: "chain produces 0,1,2,10,11,12. islice takes indices 2,3,4.", refs: [{ label: "itertools.chain", url: "https://docs.python.org/3/library/itertools.html#itertools.chain" }] },
+          { type: "output", label: "Predict the Output", prompt: "from itertools import groupby\n\ndata = \"AAABBBCCAB\"\nresult = [(k, len(list(g))) for k, g in groupby(data)]\nprint(result)", answer: "[('A', 3), ('B', 3), ('C', 2), ('A', 1), ('B', 1)]", hint: "groupby groups consecutive equal elements. Final AB aren't merged with earlier groups.", refs: [{ label: "itertools.groupby", url: "https://docs.python.org/3/library/itertools.html#itertools.groupby" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Should print all 2-letter combinations from \"ABCD\"\nfrom itertools import combinations\n\nfor combo in combinations(\"ABCD\"):\n    print(\"\".join(combo))", answer: "from itertools import combinations\n\nfor combo in combinations(\"ABCD\", 2):\n    print(\"\".join(combo))", hint: "combinations() requires a second argument r for combination length.", refs: [{ label: "itertools.combinations", url: "https://docs.python.org/3/library/itertools.html#itertools.combinations" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write windowed(iterable, n) that yields sliding windows as tuples.\n\nlist(windowed([1,2,3,4,5], 3))\n# [(1,2,3), (2,3,4), (3,4,5)]", answer: "from itertools import islice\n\ndef windowed(iterable, n):\n    it = iter(iterable)\n    window = tuple(islice(it, n))\n    if len(window) == n:\n        yield window\n    for item in it:\n        window = window[1:] + (item,)\n        yield window", hint: "Build first window with islice. Then slide by dropping first and appending new.", refs: [{ label: "itertools.islice", url: "https://docs.python.org/3/library/itertools.html#itertools.islice" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write flatten(nested) that yields all scalar values from\narbitrarily nested lists. Do NOT use itertools.\n\nlist(flatten([1, [2, [3, 4], 5], [6]]))\n# [1, 2, 3, 4, 5, 6]", answer: "def flatten(nested):\n    for item in nested:\n        if isinstance(item, list):\n            yield from flatten(item)\n        else:\n            yield item", hint: "Use recursion with 'yield from' for nested lists.", refs: [{ label: "yield from", url: "https://docs.python.org/3/reference/expressions.html#yield-expressions" }] }
+        ]
+      }
+    ]
+  },
 ];
 
 const EXERCISE_META = {
@@ -1149,8 +1692,11 @@ export default function App() {
             <p className="text-gray-400 mb-8 max-w-xs mx-auto text-sm">
               {levelUpData.level === 2 && "You've shaken the syntax rust off. Now we go Pythonic."}
               {levelUpData.level === 3 && "Functions bend to your will. The dict dungeons await."}
-              {levelUpData.level === 4 && "You're writing real Python now. The final boss is near."}
-              {levelUpData.level === 5 && "Pythonista. The highest rank. The code speaks for itself."}
+              {levelUpData.level === 4 && "You're writing real Python now. Deeper dungeons lie ahead."}
+              {levelUpData.level === 5 && "Exceptions fear you. Time to master the dark arts of decorators."}
+              {levelUpData.level === 6 && "You wrap functions like a pro. The infinite streams await."}
+              {levelUpData.level === 7 && "Generators yield to your command. One final step remains."}
+              {levelUpData.level === 8 && "Pythonista. The highest rank. The code speaks for itself."}
             </p>
             <button onClick={()=>setScreen("home")} className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-10 py-3 rounded-xl text-lg">Continue →</button>
           </div>
