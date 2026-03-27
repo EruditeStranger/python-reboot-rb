@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 const XP_PER_EXERCISE = 50;
+const XP_PER_DRILL = 25;
 const XP_PER_BOSS = 150;
 const LEVELS = [
   { level: 1, title: "Script Kiddie",     xpNeeded: 0,    icon: "🥚" },
@@ -512,6 +513,14 @@ export default function App() {
   const [bossWon, setBossWon] = useState(false);
   const [bossIntroSeen, setBossIntroSeen] = useState(false);
 
+  // drill state
+  const [drillExercises, setDrillExercises] = useState<Exercise[]>([]);
+  const [drillIdx, setDrillIdx] = useState(0);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillResult, setDrillResult] = useState<GradeResult | null>(null);
+  const [drillScore, setDrillScore] = useState(0);
+  const [drillComplete, setDrillComplete] = useState(false);
+
   const curLevel = getCurrentLevel(xp);
   const nextLevel = getNextLevel(xp);
   const xpForBar = nextLevel ? xp - curLevel.xpNeeded : XP_PER_EXERCISE;
@@ -625,6 +634,66 @@ export default function App() {
 
   const nextBossRound = () => {
     setBossRound(r => r + 1); setUserAnswer(""); setBossResult(null); setShowHint(false);
+  };
+
+  // ── DRILL ──
+  const getCompletedTopics = (): string[] => {
+    const topics: string[] = [];
+    for (const mod of MODULES) {
+      for (const lesson of mod.lessons) {
+        const allDone = lesson.exercises.every((_, i) => progress[mod.id]?.exercises[`${lesson.id}-${i}`]);
+        if (allDone) topics.push(lesson.title);
+      }
+    }
+    return topics;
+  };
+
+  const startDrill = async () => {
+    const topics = getCompletedTopics();
+    if (topics.length === 0) return;
+    setDrillExercises([]); setDrillIdx(0); setDrillScore(0);
+    setDrillComplete(false); setDrillResult(null);
+    setUserAnswer(""); setShowHint(false);
+    setDrillLoading(true); setScreen("drill");
+    try {
+      const res = await fetch("/api/drill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topics }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const exercises = await res.json();
+      if (exercises.error) throw new Error(exercises.error);
+      setDrillExercises(exercises);
+    } catch {
+      setScreen("module");
+    }
+    setDrillLoading(false);
+  };
+
+  const handleDrillSubmit = async () => {
+    if (!userAnswer.trim() || !drillExercises[drillIdx]) return;
+    setGrading(true);
+    try {
+      const r = await gradeWithClaude(drillExercises[drillIdx], userAnswer);
+      setDrillResult(r);
+      if (r.correct) {
+        setDrillScore(s => s + 1);
+        setStreak(s => s + 1);
+        addXp(XP_PER_DRILL);
+      } else setStreak(0);
+    } catch (e) {
+      setDrillResult({ correct: false, feedback: e instanceof Error ? e.message : "Grading failed." });
+    }
+    setGrading(false);
+  };
+
+  const nextDrillExercise = () => {
+    if (drillIdx + 1 < drillExercises.length) {
+      setDrillIdx(i => i + 1); setUserAnswer(""); setDrillResult(null); setShowHint(false);
+    } else {
+      setDrillComplete(true);
+    }
   };
 
   return (
@@ -798,6 +867,15 @@ export default function App() {
             })}
           </div>
 
+          {/* Drill button */}
+          {activeMod.lessons.some(l => l.exercises.every((_, i) => progress[activeMod.id]?.exercises[`${l.id}-${i}`])) && (
+            <button onClick={startDrill} disabled={drillLoading}
+              className="w-full rounded-xl p-4 border-2 border-purple-600 bg-purple-900/20 text-purple-300 hover:bg-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-center font-bold mb-4">
+              ⚔️ Training Arena — Drill Mode
+              <div className="text-xs font-normal text-purple-400 mt-0.5">5 random exercises from completed topics · +{XP_PER_DRILL} XP each</div>
+            </button>
+          )}
+
           {/* Boss button */}
           {(() => {
             const modDone = allLessonsDone(activeMod.id);
@@ -960,6 +1038,101 @@ export default function App() {
                   </>
                 );
               })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── DRILL ── */}
+      {screen === "drill" && (
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <button onClick={()=>setScreen("module")} className="text-sm text-gray-400 hover:text-white mb-4 flex items-center gap-1">‹ Back</button>
+
+          {drillLoading && (
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4 animate-pulse">⚔️</div>
+              <h1 className="text-xl font-bold text-purple-300 mb-2">Training Arena</h1>
+              <p className="text-gray-400 text-sm flex items-center justify-center gap-2"><Spinner /> The Arena Master is forging your challenges...</p>
+            </div>
+          )}
+
+          {!drillLoading && !drillComplete && drillExercises.length > 0 && (() => {
+            const dex = drillExercises[drillIdx];
+            const dmeta = EXERCISE_META[dex.type];
+            return (
+              <>
+                <div className="bg-gradient-to-r from-purple-900 to-violet-950 border border-purple-700 rounded-xl p-4 mb-5 flex items-center gap-3">
+                  <span className="text-3xl">⚔️</span>
+                  <div>
+                    <div className="font-bold text-sm text-purple-200">Training Arena</div>
+                    <div className="flex gap-1 mt-1">
+                      {drillExercises.map((_,i)=>(
+                        <div key={i} className={`h-2 w-8 rounded-full ${i<drillIdx?"bg-emerald-500":i===drillIdx?"bg-purple-400 animate-pulse":"bg-gray-600"}`}/>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="ml-auto text-sm text-gray-400">Challenge {drillIdx+1}/{drillExercises.length}</span>
+                </div>
+                <div className={`border rounded-xl p-4 mb-3 ${dmeta.bg}`}>
+                  <div className={`flex items-center gap-2 font-bold mb-2 text-sm ${dmeta.color}`}>{dmeta.icon} {dmeta.label}</div>
+                  <pre className="text-sm text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{dex.prompt}</pre>
+                </div>
+                <textarea value={userAnswer} onChange={e=>setUserAnswer(e.target.value)} onKeyDown={handleTab} disabled={!!drillResult}
+                  placeholder={dex.type==="output"?"Type what you think prints...":"Write your Python code here..."}
+                  className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm font-mono text-gray-100 resize-none focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                  rows={dex.type==="output"?4:7}/>
+                {!drillResult && <button onClick={()=>setShowHint(h=>!h)} className="text-xs text-gray-500 hover:text-gray-300 mt-1.5 block">{showHint?"▾ Hide":"💡 Hint"}</button>}
+                {showHint && !drillResult && <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-400 mt-1 mb-2">{dex.hint}</div>}
+                {drillResult && (
+                  <div className={`rounded-xl p-3 mt-3 mb-3 border text-sm ${drillResult.correct?"bg-emerald-900/30 border-emerald-700 text-emerald-200":"bg-red-900/30 border-red-800 text-red-200"}`}>
+                    <div className="font-bold mb-0.5">{drillResult.correct?"✅ Correct!":"❌ Not quite."}</div>
+                    <div className="text-gray-300">{drillResult.feedback}</div>
+                  </div>
+                )}
+                <div className="mt-2">
+                  {!drillResult ? (
+                    <button onClick={handleDrillSubmit} disabled={!userAnswer.trim()||grading}
+                      className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2">
+                      {grading?<><Spinner/>Grading...</>:"Submit Answer"}
+                    </button>
+                  ) : drillResult.correct ? (
+                    <button onClick={nextDrillExercise}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg font-medium text-sm">
+                      {drillIdx+1<drillExercises.length?"Next Challenge →":"Finish Drill ✓"}
+                    </button>
+                  ) : (
+                    <button onClick={()=>{setDrillResult(null);setUserAnswer("");}}
+                      className="w-full bg-orange-600 hover:bg-orange-500 text-white py-2.5 rounded-lg font-medium text-sm">Try Again</button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+
+          {!drillLoading && drillComplete && (
+            <div className="text-center py-12">
+              <div className="text-7xl mb-4">{drillScore === 5 ? "🏆" : drillScore >= 3 ? "⚔️" : drillScore >= 1 ? "🛡️" : "💀"}</div>
+              <h1 className="text-2xl font-bold mb-2 text-purple-200">Arena Complete!</h1>
+              <div className="text-4xl font-bold text-white mb-2">{drillScore}/{drillExercises.length}</div>
+              <p className="text-gray-400 text-sm mb-1">
+                {drillScore === 5 && "Flawless victory! The Arena Master bows before you."}
+                {drillScore === 4 && "Impressive! Only one challenge bested you."}
+                {drillScore === 3 && "Well fought, warrior. Return to sharpen your blade."}
+                {drillScore === 2 && "The arena humbles even the bravest. Keep training."}
+                {drillScore === 1 && "A hard-won point. The arena awaits your return."}
+                {drillScore === 0 && "Defeated... but every warrior falls before they rise."}
+              </p>
+              <p className="text-yellow-400 text-sm font-medium mb-8">+{drillScore * XP_PER_DRILL} XP earned</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={startDrill}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-3 rounded-xl">
+                  Fight Again ⚔️
+                </button>
+                <button onClick={()=>setScreen("module")}
+                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-6 py-3 rounded-xl">
+                  Leave Arena
+                </button>
+              </div>
             </div>
           )}
         </div>
