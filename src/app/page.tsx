@@ -976,12 +976,12 @@ export default function App() {
   const [showXpPop, setShowXpPop] = useState<number | false>(false);
   const [levelUpData, setLevelUpData] = useState<LevelInfo | null>(null);
   const [progress, setProgress] = useState<Progress>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("pr_progress");
-      if (saved) { try { return JSON.parse(saved); } catch {} }
-    }
     const p: Progress = {};
     MODULES.forEach(m => { p[m.id] = { exercises:{}, bossDefeated:false, bossRound:0, bossAnswers:{} }; });
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("pr_progress");
+      if (saved) { try { const s = JSON.parse(saved); Object.keys(s).forEach(k => { if (p[k]) p[k] = { ...p[k], ...s[k] }; }); } catch {} }
+    }
     return p;
   });
   // ─── SYNC CODE ───
