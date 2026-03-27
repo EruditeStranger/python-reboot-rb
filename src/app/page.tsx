@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const XP_PER_EXERCISE = 50;
 const XP_PER_BOSS = 150;
@@ -394,7 +394,9 @@ or
     const data = await res.json();
     const raw: string = data?.content?.[0]?.text ?? "";
     const clean = raw.replace(/```json\n?|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+    if (!clean) throw new Error("Empty response from grader — please try again.");
+    let parsed;
+    try { parsed = JSON.parse(clean); } catch { throw new Error("Grading response was cut off — please try again."); }
 
     if (typeof parsed.correct !== "boolean") throw new Error("bad schema");
     return parsed as GradeResult;
@@ -438,10 +440,70 @@ export default function App() {
     MODULES.forEach(m => { p[m.id] = { exercises:{}, bossDefeated:false, bossRound:0, bossAnswers:{} }; });
     return p;
   });
-  // persist progress to localStorage
+  // ─── SYNC CODE ───
+  const [syncCode, setSyncCode] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("pr_sync_code");
+  });
+  const [syncInput, setSyncInput] = useState("");
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // persist progress to localStorage + KV
+  const saveToKV = useCallback(async (code: string, xpVal: number, streakVal: number, progressVal: Progress) => {
+    try {
+      await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, data: { xp: xpVal, streak: streakVal, progress: progressVal } }),
+      });
+    } catch {}
+  }, []);
+
   useEffect(() => { localStorage.setItem("pr_xp", String(xp)); }, [xp]);
   useEffect(() => { localStorage.setItem("pr_streak", String(streak)); }, [streak]);
   useEffect(() => { localStorage.setItem("pr_progress", JSON.stringify(progress)); }, [progress]);
+
+  // debounced save to KV whenever state changes
+  useEffect(() => {
+    if (!syncCode) return;
+    const t = setTimeout(() => { saveToKV(syncCode, xp, streak, progress); }, 1500);
+    return () => clearTimeout(t);
+  }, [syncCode, xp, streak, progress, saveToKV]);
+
+  const handleSyncConnect = async () => {
+    const code = syncInput.trim();
+    if (!code) return;
+    setSyncing(true);
+    setSyncStatus(null);
+    try {
+      const res = await fetch(`/api/sync?code=${encodeURIComponent(code)}`);
+      const json = await res.json();
+      if (json.found && json.data) {
+        const d = json.data;
+        if (d.xp != null) setXp(d.xp);
+        if (d.streak != null) setStreak(d.streak);
+        if (d.progress) setProgress(d.progress);
+        setSyncStatus("Loaded progress from cloud!");
+      } else {
+        // New code — push current local state up
+        await saveToKV(code, xp, streak, progress);
+        setSyncStatus("New sync code created — progress saved!");
+      }
+      setSyncCode(code);
+      localStorage.setItem("pr_sync_code", code);
+      setSyncInput("");
+    } catch {
+      setSyncStatus("Sync failed — check your connection.");
+    }
+    setSyncing(false);
+  };
+
+  const handleSyncDisconnect = () => {
+    setSyncCode(null);
+    localStorage.removeItem("pr_sync_code");
+    setSyncStatus(null);
+  };
 
   // boss state
   const [bossRound, setBossRound] = useState(0);
@@ -646,8 +708,37 @@ export default function App() {
             })}
           </div>
 
-          {/* Level roadmap */}
+          {/* Sync */}
           <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Cloud Sync</div>
+            {syncCode ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="text-sm text-gray-300">Syncing as: <span className="font-mono text-emerald-400">{syncCode}</span></div>
+                  <div className="text-xs text-gray-500 mt-0.5">Progress auto-saves across devices</div>
+                </div>
+                <button onClick={handleSyncDisconnect} className="text-xs text-gray-500 hover:text-red-400">Disconnect</button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-gray-400 mb-2">Enter a sync code to save progress across devices. Use the same code on any device to pick up where you left off.</p>
+                <div className="flex gap-2">
+                  <input value={syncInput} onChange={e => setSyncInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleSyncConnect()}
+                    placeholder="e.g. rahul-python-2026"
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 font-mono focus:outline-none focus:border-blue-500" />
+                  <button onClick={handleSyncConnect} disabled={!syncInput.trim() || syncing}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    {syncing ? "Syncing..." : "Connect"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {syncStatus && <div className="mt-2 text-xs text-emerald-400">{syncStatus}</div>}
+          </div>
+
+          {/* Level roadmap */}
+          <div className="mt-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">Level Roadmap</div>
             <div className="space-y-2">
               {LEVELS.map(l => {

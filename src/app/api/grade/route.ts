@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 200,
+      max_tokens: 512,
       messages: [{ role: "user", content: prompt }],
     }),
   });
