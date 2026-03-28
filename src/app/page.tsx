@@ -123,9 +123,9 @@ const BOSSES: Record<string, { name: string; icon: string; color: string; border
     color: "from-amber-900 to-orange-950", border: "border-amber-700",
     intro: "I am the Exception Phantom... Every uncaught error feeds my power. Show me you can trap what others fear!",
     rounds: [
-      { type: "bugfix", prompt: "Round 1/3 \u2014 Fix this code that silently swallows exceptions.\n\ntry:\n    result = int(\"not_a_number\")\nexcept:\n    pass\n\nprint(\"Continuing...\")\n# Should print the error info AND re-raise", answer: "try:\n    result = int(\"not_a_number\")\nexcept Exception as e:\n    print(f\"{type(e).__name__}: {e}\")\n    raise\n\nprint(\"Continuing...\")", hint: "Bare 'except: pass' hides all errors. Catch Exception as e, print info, then re-raise.", refs: [{ label: "Exception Handling", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] },
-      { type: "output", prompt: "Round 2/3 \u2014 What does this print?\n\nclass PhantomError(ValueError):\n    pass\n\ndef haunt():\n    try:\n        raise PhantomError(\"boo\")\n    except ValueError as e:\n        print(f\"caught: {e}\")\n    finally:\n        print(\"finally\")\n\nhaunt()", answer: "caught: boo\nfinally", hint: "PhantomError is a subclass of ValueError, so except ValueError catches it.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
-      { type: "scratch", prompt: "Round 3/3 \u2014 Write a context manager class suppress that suppresses specified exception types and stores the last one in .exception.\n\n# with suppress(ValueError, TypeError) as s:\n#     int(\"bad\")\n# print(s.exception)  # ValueError: invalid literal...", answer: "class suppress:\n    def __init__(self, *exceptions):\n        self.exceptions = exceptions\n        self.exception = None\n    def __enter__(self):\n        return self\n    def __exit__(self, exc_type, exc_val, exc_tb):\n        if exc_type and issubclass(exc_type, self.exceptions):\n            self.exception = exc_val\n            return True\n        return False", hint: "Return True from __exit__ to suppress. Use issubclass to check.", refs: [{ label: "Context Manager Types", url: "https://docs.python.org/3/reference/datamodel.html#context-managers" }] }
+      { type: "bugfix", prompt: "Round 1/3 \u2014 Fix this code that silently swallows exceptions.\n\ntry:\n    result = int(\"not_a_number\")\nexcept:\n    pass\n\nprint(\"Continuing...\")\n# Should print the error type and message, then re-raise", answer: "try:\n    result = int(\"not_a_number\")\nexcept Exception as e:\n    print(f\"{type(e).__name__}: {e}\")\n    raise\n\nprint(\"Continuing...\")", hint: "Bare 'except: pass' hides all errors. Catch Exception as e, print info, then re-raise.", refs: [{ label: "Exception Handling", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] },
+      { type: "output", prompt: "Round 2/3 \u2014 What does this print?\n\ndef phantom():\n    results = []\n    for val in [\"3\", \"hi\", None, \"7\"]:\n        try:\n            results.append(int(val))\n        except ValueError:\n            results.append(\"V\")\n        except TypeError:\n            results.append(\"T\")\n    return results\n\nprint(phantom())", answer: "[3, 'V', 'T', 7]", hint: "int('3') and int('7') succeed. int('hi') raises ValueError. int(None) raises TypeError.", refs: [{ label: "Built-in Exceptions", url: "https://docs.python.org/3/library/exceptions.html" }] },
+      { type: "scratch", prompt: "Round 3/3 \u2014 Write a function safe_chain(funcs, arg) that takes a list of\nsingle-argument functions and an initial arg. Apply each function in\nsequence, passing the result to the next. If any function raises any\nexception, skip it and continue with the previous result. Return the\nfinal result.\n\n# safe_chain([str, int, float], \"42\") -> 42.0\n# safe_chain([str, int], 3.14) -> 3", answer: "def safe_chain(funcs, arg):\n    result = arg\n    for fn in funcs:\n        try:\n            result = fn(result)\n        except Exception:\n            pass\n    return result", hint: "Loop through funcs, try each one. On any exception, just skip it and keep the previous result.", refs: [{ label: "Handling Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] }
     ]
   },
   "comprehensions-adv": {
@@ -419,29 +419,31 @@ You can catch multiple exception types in one \`except\` with a tuple, or stack 
         ]
       },
       {
-        id: "raising-custom", title: "Raising & Custom Exceptions",
-        theory: `Use \`raise\` to throw exceptions explicitly. Create custom exception classes by subclassing \`Exception\`.
+        id: "exception-types", title: "Know Your Exceptions",
+        theory: `Python has a rich hierarchy of built-in exceptions. Knowing which exception maps to which error saves debugging time.
 
-\`\`\`python
-class InsufficientFunds(Exception):
-    def __init__(self, balance, amount):
-        super().__init__(f"Need {amount}, have {balance}")
-        self.balance = balance
-        self.amount = amount
+**Most common ones you'll hit daily:**
 
-def withdraw(balance, amount):
-    if amount > balance:
-        raise InsufficientFunds(balance, amount)
-    return balance - amount
-\`\`\`
+| Exception | When it fires |
+|-----------|--------------|
+| \`ValueError\` | Right type, wrong value: \`int("abc")\` |
+| \`TypeError\` | Wrong type: \`len(42)\`, \`"a" + 1\` |
+| \`KeyError\` | Missing dict key: \`d["nope"]\` |
+| \`IndexError\` | List index out of range: \`[1,2][5]\` |
+| \`AttributeError\` | Missing attribute: \`"hi".append("!")\` |
+| \`NameError\` | Undefined variable: \`print(xyz)\` |
+| \`FileNotFoundError\` | \`open("nope.txt")\` |
+| \`ZeroDivisionError\` | \`1 / 0\` |
+| \`StopIteration\` | \`next()\` on exhausted iterator |
+| \`ImportError\` | \`import nonexistent_module\` |
 
-Exception chaining with \`raise ... from ...\` preserves the original cause. Use bare \`raise\` inside an except block to re-raise the current exception.`,
+Use \`raise\` to throw them explicitly: \`raise ValueError("bad input")\`. Catch specific types rather than bare \`except:\`.`,
         exercises: [
-          { type: "output", label: "Predict the Output", prompt: "What does this print?\n\ndef check(val):\n    if val < 0:\n        raise ValueError(\"negative\")\n    return val * 2\n\ntry:\n    print(check(3))\n    print(check(-1))\nexcept ValueError as e:\n    print(e)", answer: "6\nnegative", hint: "check(3) prints 6. check(-1) raises ValueError, so the except block prints the message.", refs: [{ label: "Raising Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#raising-exceptions" }] },
-          { type: "output", label: "Predict the Output", prompt: "class AppError(Exception):\n    pass\n\nclass NotFound(AppError):\n    pass\n\ntry:\n    raise NotFound(\"item 42\")\nexcept AppError as e:\n    print(type(e).__name__, e)", answer: "NotFound item 42", hint: "NotFound is a subclass of AppError, so except AppError catches it.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
-          { type: "bugfix", label: "Fix the Bug", prompt: "# Goal: custom exception with a status_code attribute\nclass HttpError(Exception):\n    def __init__(self, status_code, msg):\n        self.status_code = status_code\n\ntry:\n    raise HttpError(404, \"Not Found\")\nexcept HttpError as e:\n    print(f\"{e.status_code}: {e}\")", answer: "class HttpError(Exception):\n    def __init__(self, status_code, msg):\n        super().__init__(msg)\n        self.status_code = status_code\n\ntry:\n    raise HttpError(404, \"Not Found\")\nexcept HttpError as e:\n    print(f\"{e.status_code}: {e}\")", hint: "Without calling super().__init__(msg), the exception has no message.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
-          { type: "scratch", label: "Write from Scratch", prompt: "Define a custom exception NegativeAge that stores the invalid age.\nWrite set_age(age) that raises NegativeAge if age < 0, otherwise returns age.\nNegativeAge's message should be \"Invalid age: {age}\".", answer: "class NegativeAge(Exception):\n    def __init__(self, age):\n        super().__init__(f\"Invalid age: {age}\")\n        self.age = age\n\ndef set_age(age):\n    if age < 0:\n        raise NegativeAge(age)\n    return age", hint: "Subclass Exception, call super().__init__ with your formatted message, and store the age attribute.", refs: [{ label: "User-defined Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions" }] },
-          { type: "scratch", label: "Write from Scratch", prompt: "Write parse_config(raw) that tries json.loads(raw).\nIf it raises json.JSONDecodeError, catch it and raise a new\nValueError(\"bad config\") chained from the original error.", answer: "import json\n\ndef parse_config(raw):\n    try:\n        return json.loads(raw)\n    except json.JSONDecodeError as e:\n        raise ValueError(\"bad config\") from e", hint: "Use 'raise NewException(...) from original' to chain exceptions.", refs: [{ label: "Exception Chaining", url: "https://docs.python.org/3/tutorial/errors.html#exception-chaining" }] }
+          { type: "output", label: "Predict the Output", prompt: "What exception type is raised?\n\ntry:\n    result = {\"a\": 1}[\"b\"]\nexcept Exception as e:\n    print(type(e).__name__)", answer: "KeyError", hint: "Accessing a dict key that doesn't exist raises KeyError.", refs: [{ label: "KeyError", url: "https://docs.python.org/3/library/exceptions.html#KeyError" }] },
+          { type: "output", label: "Predict the Output", prompt: "What exception type is raised?\n\ntry:\n    x = [1, 2, 3]\n    x.append(4)\n    print(x.push(5))\nexcept Exception as e:\n    print(type(e).__name__)", answer: "AttributeError", hint: "Lists don't have a .push() method — that's JavaScript. Python uses .append().", refs: [{ label: "AttributeError", url: "https://docs.python.org/3/library/exceptions.html#AttributeError" }] },
+          { type: "output", label: "Predict the Output", prompt: "What exception types are caught (in order)?\n\nerrors = []\nfor expr in [lambda: int('x'), lambda: 1/0, lambda: [][5]]:\n    try:\n        expr()\n    except Exception as e:\n        errors.append(type(e).__name__)\nprint(errors)", answer: "['ValueError', 'ZeroDivisionError', 'IndexError']", hint: "int('x') -> ValueError, 1/0 -> ZeroDivisionError, [][5] -> IndexError.", refs: [{ label: "Built-in Exceptions", url: "https://docs.python.org/3/library/exceptions.html" }] },
+          { type: "bugfix", label: "Fix the Bug", prompt: "# Each except should catch the RIGHT exception type\ndef safe_get(data, key, index):\n    try:\n        val = data[key]\n    except IndexError:\n        return \"no key\"\n    try:\n        return val[index]\n    except KeyError:\n        return \"no index\"\n\nprint(safe_get({\"a\": [1,2]}, \"b\", 0))\nprint(safe_get({\"a\": [1,2]}, \"a\", 5))", answer: "def safe_get(data, key, index):\n    try:\n        val = data[key]\n    except KeyError:\n        return \"no key\"\n    try:\n        return val[index]\n    except IndexError:\n        return \"no index\"\n\nprint(safe_get({\"a\": [1,2]}, \"b\", 0))\nprint(safe_get({\"a\": [1,2]}, \"a\", 5))", hint: "Dict missing key = KeyError (not IndexError). List out of range = IndexError (not KeyError). They're swapped.", refs: [{ label: "KeyError", url: "https://docs.python.org/3/library/exceptions.html#KeyError" }, { label: "IndexError", url: "https://docs.python.org/3/library/exceptions.html#IndexError" }] },
+          { type: "scratch", label: "Write from Scratch", prompt: "Write a function describe_error(func) that calls func() and returns\na string describing what happened:\n- If no error: \"ok\"\n- If ValueError: \"bad value\"\n- If TypeError: \"wrong type\"\n- If KeyError: \"missing key\"\n- Any other exception: \"other error\"", answer: "def describe_error(func):\n    try:\n        func()\n        return \"ok\"\n    except ValueError:\n        return \"bad value\"\n    except TypeError:\n        return \"wrong type\"\n    except KeyError:\n        return \"missing key\"\n    except Exception:\n        return \"other error\"", hint: "Stack multiple except clauses from most specific to most general. End with except Exception as a catch-all.", refs: [{ label: "Handling Exceptions", url: "https://docs.python.org/3/tutorial/errors.html#handling-exceptions" }] }
         ]
       }
     ]
